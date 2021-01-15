@@ -50,7 +50,7 @@ For the basic course:
 Here is my [course completion report](http://citiprogram.org/verify/?k1d1732f0-9f35-422d-9a58-d821623e5cb5-40343731).
 Here is my [course completion certificate](http://citiprogram.org/verify/?w2fa5babf-42a9-4f6d-8012-fd080b812c7d-40343731).
 
-Due to an issue regarding some of my coursework being too old, I was instructed to complete the refresher course:
+Due to an issue regarding some of my coursework being too old, I was instructed to complete the refresher course in order to get PhysioNet credentials:
 Here is my [course completion report](http://citiprogram.org/verify/?k042b311f-9e6e-4456-970f-6b68e979fd7b-40380846).
 Here is my [course completion certificate](http://citiprogram.org/verify/?w90e40897-5d20-4719-bd72-625d3b6a9492-40380846).
 
@@ -92,6 +92,10 @@ Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` lo
     ```{bash eval=FALSE}
     echo 'hello, world' >> test2.txt
     ```
+
+
+**Solution**: The command `echo 'hello, world' > test1.txt ` writes 'hello, world' to the test1 text file. If there is already text in the file, it will be overwritten. Thus, the result of this command - no matter how many times it is run - will be a file with 'hello, world' written one time.  
+The command `echo 'hello, world' >> test2.txt` appends 'hello, world' to the test2 text file. If there is already text in the file, it will **not** be overwritten. Thus, the result of running this command 4 times would be a file with 'hello, world' written 4 times. 
 
 3. Using your favorite text editor (e.g., `vi`), type the following and save the file as `middle.sh`:
     ```{bash eval=FALSE}

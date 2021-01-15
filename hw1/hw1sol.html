@@ -412,7 +412,7 @@ summary {
 </ol>
 <p><strong>Solution</strong>:</p>
 <p>For the basic course: Here is my <a href="http://citiprogram.org/verify/?k1d1732f0-9f35-422d-9a58-d821623e5cb5-40343731">course completion report</a>. Here is my <a href="http://citiprogram.org/verify/?w2fa5babf-42a9-4f6d-8012-fd080b812c7d-40343731">course completion certificate</a>.</p>
-<p>Due to an issue regarding some of my coursework being too old, I was instructed to complete the refresher course: Here is my <a href="http://citiprogram.org/verify/?k042b311f-9e6e-4456-970f-6b68e979fd7b-40380846">course completion report</a>. Here is my <a href="http://citiprogram.org/verify/?w90e40897-5d20-4719-bd72-625d3b6a9492-40380846">course completion certificate</a>.</p>
+<p>Due to an issue regarding some of my coursework being too old, I was instructed to complete the refresher course in order to get PhysioNet credentials: Here is my <a href="http://citiprogram.org/verify/?k042b311f-9e6e-4456-970f-6b68e979fd7b-40380846">course completion report</a>. Here is my <a href="http://citiprogram.org/verify/?w90e40897-5d20-4719-bd72-625d3b6a9492-40380846">course completion certificate</a>.</p>
 <ol start="2" style="list-style-type: decimal">
 <li><p>The <code>/usr/203b-data/mimic-iv/</code> folder on teaching server contains data sets from MIMIC-IV. Refer to <a href="https://mimic-iv.mit.edu/docs/datasets/" class="uri">https://mimic-iv.mit.edu/docs/datasets/</a> for details of data files.</p>
 <pre class="bash"><code>ls -l /usr/203b-data/mimic-iv</code></pre>
@@ -444,6 +444,10 @@ summary {
 <pre class="bash"><code>echo &#39;hello, world&#39; &gt; test1.txt</code></pre>
 <p>and</p>
 <pre class="bash"><code>echo &#39;hello, world&#39; &gt;&gt; test2.txt</code></pre></li>
+</ol>
+<p><strong>Solution</strong>: The command <code>echo &#39;hello, world&#39; &gt; test1.txt</code> writes ‘hello, world’ to the test1 text file. If there is already text in the file, it will be overwritten. Thus, the result of this command - no matter how many times it is run - will be the test1 file with ‘hello, world’ written.<br />
+The command <code>echo &#39;hello, world&#39; &gt;&gt; test2.txt</code> appends ‘hello, world’ to the test2 text file. If there is already text in the file, it will <strong>not</strong> be overwritten. Thus, the result of running this command 4 times would be the test2 file with ‘hello, world’ written 4 times.</p>
+<ol start="3" style="list-style-type: decimal">
 <li><p>Using your favorite text editor (e.g., <code>vi</code>), type the following and save the file as <code>middle.sh</code>:</p>
 <pre class="bash"><code>#!/bin/sh
 # Select lines from the middle of a file.
@@ -511,7 +515,7 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 ## 24 25 26 27 28 29 30</code></pre>
 <p>cal month_# year_# displays a calendar for the requested month in the requested year. Strangely, the month of september in 1752 had 11 days missing! This was done during the switch to the Gregorian calendar.</p>
 <pre class="bash"><code>date</code></pre>
-<pre><code>## Fri Jan 15 23:07:26 UTC 2021</code></pre>
+<pre><code>## Fri Jan 15 23:17:22 UTC 2021</code></pre>
 </div>
 </div>
 
