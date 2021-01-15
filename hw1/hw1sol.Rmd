@@ -84,6 +84,7 @@ Display the number of lines in each data file using a similar loop.
     ```
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
 
+
 2. What's the difference between the following two commands?
     ```{bash eval=FALSE}
     echo 'hello, world' > test1.txt
@@ -119,20 +120,90 @@ Try these commands in Bash and interpret the results: `cal`, `cal 2021`, `cal 9 
 ```{bash}
 cal
 ```
-cal displays the calendar for the current month. 
+`cal` displays the calendar for the current month. 
 
 
 ```{bash}
 cal 2021
 ```
-cal followed by year shows the calendar for that whole year.
+`cal 2021` calendar for the year 2021. Substituting another year would show the calendar for the specified year.
 
 ```{bash}
 cal 9 1752
 ```
-cal month_# year_# displays a calendar for the requested month in the requested year. Strangely, the month of september in 1752 had 11 days missing! This was done during the switch to the Gregorian calendar.
+`cal 9 1752` displays a calendar for the requested month in the requested year. Strangely, the month of September in 1752 had 11 days missing! This was done during the switch to the Gregorian calendar.
 
 ```{bash}
 date
 ```
+`date` gives the current day of the week, month, day, and time in Coordinated Universal Time.
 
+```{bash}
+hostname
+```
+`hostname` gives the name of the server. In this case, that is ucla-biostat-203b
+
+```{bash}
+arch
+```
+`arch` prints out the computer architecture. For me, this is x86_64.
+
+```{bash}
+uname -a
+```
+`uname -a` prints out detail about the current user, server, and timing. For example, it will print the operating system, server/network name, computer architecture, and date.
+
+
+```{bash}
+uptime
+```
+
+`uptime` ??? 
+
+
+```{bash}
+who am i
+```
+
+`who am i` ???
+
+
+```{bash}
+who
+```
+
+`who`
+
+
+```{bash}
+w
+```
+`w`
+
+```{bash}
+id
+```
+
+`id`
+
+
+```{bash}
+last | head
+```
+`last | head`
+
+```{bash}
+echo {con,pre}{sent,fer}{s,ed}
+```
+`echo {con,pre}{sent,fer}{s,ed}`
+
+```{bash}
+time sleep 5
+```
+`time sleep 5`
+
+
+```{bash}
+history | tail
+```
+`history | tail`
