@@ -84,6 +84,11 @@ Display the number of lines in each data file using a similar loop.
     ```
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
 
+```{r}
+
+```
+
+
 
 2. What's the difference between the following two commands?
     ```{bash eval=FALSE}
@@ -110,6 +115,10 @@ Using `chmod` make the file executable by the owner, and run
     ./middle.sh pride_and_prejudice.txt 20 5
     ```
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
+
+**Solution**: The output is the Author and Editor of Pride and Prejudice. The first line is included to specify what shell the program needs to be executed with (sh). This might be especially important if using the script on a different system, which may be using a different shell by default. 
+
+`"$1"`, `"$2"`, and `"$3"` refer to the arguments for the script. The resulting program takes the first `$2` (in this case, 20) lines of file `"$1"` (`pride_and_prejudice.txt`). These lines are piped to the next command, which takes the last `$3` (5) lines.  For these particular arguments, the result is the 15th through 20th lines of the Pride and Prejudice text. 
 
 ### Q4. More fun with Linux
 
