@@ -167,7 +167,7 @@ uname -a
 uptime
 ```
 
-`uptime` ??? 
+`uptime` gives some statistics about the system. Specifically, the current time (in UTC), followed by the amount of the time the system has been up, the number of logged in users, and system load averages.
 
 
 ```{bash}
@@ -199,20 +199,20 @@ id
 ```{bash}
 last | head
 ```
-`last | head`
+`last | head` gives the most recent 10 entries (`head`) from a list of logins into the server (given by `last`). This list gives usernames, date, log-in and log-out times, and other information. 
 
 ```{bash}
 echo {con,pre}{sent,fer}{s,ed}
 ```
-`echo {con,pre}{sent,fer}{s,ed}`
+`echo {con,pre}{sent,fer}{s,ed}` prints all 8 combinations the given word parts. There are three "positions", each with two possible entries, for a total of `2 * 2 * 2 = 8` total words to display.  
 
 ```{bash}
 time sleep 5
 ```
-`time sleep 5`
+`time sleep 5` tells the system to sleep for 5 seconds (`sleep 5`), and then prints the time that it took to do that command (`time`).
 
 
 ```{bash}
 history | tail
 ```
-`history | tail`
+`history | tail` gives the most recent 10 commands that I have executed. As the most recently typed command, `history | tail` is at the bottom of this list.    

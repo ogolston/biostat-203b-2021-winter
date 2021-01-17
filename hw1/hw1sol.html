@@ -457,6 +457,8 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 <pre class="bash"><code>./middle.sh pride_and_prejudice.txt 20 5</code></pre>
 <p>Explain the output. Explain the meaning of <code>&quot;$1&quot;</code>, <code>&quot;$2&quot;</code>, and <code>&quot;$3&quot;</code> in this shell script. Why do we need the first line of the shell script?</p></li>
 </ol>
+<p><strong>Solution</strong>: The output is the Author and Editor of Pride and Prejudice. The first line is included to specify what shell the program needs to be executed with (sh). This might be especially important if using the script on a different system, which may be using a different shell by default.</p>
+<p><code>&quot;$1&quot;</code>, <code>&quot;$2&quot;</code>, and <code>&quot;$3&quot;</code> refer to the arguments for the script. The resulting program takes the first <code>$2</code> (in this case, 20) lines of file <code>&quot;$1&quot;</code> (<code>pride_and_prejudice.txt</code>). These lines are piped to the next command, which takes the last <code>$3</code> (5) lines. For these particular arguments, the result is the 15th through 20th lines of the Pride and Prejudice text.</p>
 <div id="q4.-more-fun-with-linux" class="section level3">
 <h3>Q4. More fun with Linux</h3>
 <p>Try these commands in Bash and interpret the results: <code>cal</code>, <code>cal 2021</code>, <code>cal 9 1752</code> (anything unusual?), <code>date</code>, <code>hostname</code>, <code>arch</code>, <code>uname -a</code>, <code>uptime</code>, <code>who am i</code>, <code>who</code>, <code>w</code>, <code>id</code>, <code>last | head</code>, <code>echo {con,pre}{sent,fer}{s,ed}</code>, <code>time sleep 5</code>, <code>history | tail</code>.</p>
@@ -515,7 +517,7 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 ## 24 25 26 27 28 29 30</code></pre>
 <p><code>cal 9 1752</code> displays a calendar for the requested month in the requested year. Strangely, the month of September in 1752 had 11 days missing! This was done during the switch to the Gregorian calendar.</p>
 <pre class="bash"><code>date</code></pre>
-<pre><code>## Fri Jan 15 23:51:35 UTC 2021</code></pre>
+<pre><code>## Sun Jan 17 03:55:10 UTC 2021</code></pre>
 <p><code>date</code> gives the current day of the week, month, day, and time in Coordinated Universal Time.</p>
 <pre class="bash"><code>hostname</code></pre>
 <pre><code>## ucla-biostat-203b</code></pre>
@@ -527,42 +529,44 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 <pre><code>## Linux ucla-biostat-203b 3.10.0-1160.6.1.el7.x86_64 #1 SMP Tue Nov 17 13:59:11 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux</code></pre>
 <p><code>uname -a</code> prints out detail about the current user, server, and timing. For example, it will print the operating system, server/network name, computer architecture, and date.</p>
 <pre class="bash"><code>uptime</code></pre>
-<pre><code>##  23:51:35 up 12 days,  2:02,  0 users,  load average: 0.00, 0.01, 0.05</code></pre>
-<p><code>uptime</code> ???</p>
+<pre><code>##  03:55:10 up 13 days,  6:06,  1 user,  load average: 0.01, 0.06, 0.05</code></pre>
+<p><code>uptime</code> gives some statistics about the system. Specifically, the current time (in UTC), followed by the amount of the time the system has been up, the number of logged in users, and system load averages.</p>
 <pre class="bash"><code>who am i</code></pre>
 <p><code>who am i</code> ???</p>
 <pre class="bash"><code>who</code></pre>
+<pre><code>## OLIVIAGOLSTON pts/4        2021-01-17 03:39 (108-64-213-148.lightspeed.sndgca.sbcglobal.net)</code></pre>
 <p><code>who</code></p>
 <pre class="bash"><code>w</code></pre>
-<pre><code>##  23:51:35 up 12 days,  2:02,  0 users,  load average: 0.00, 0.01, 0.05
-## USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT</code></pre>
+<pre><code>##  03:55:10 up 13 days,  6:06,  1 user,  load average: 0.01, 0.06, 0.05
+## USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+## OLIVIAGO pts/4    108-64-213-148.l 03:39   46.00s  0.07s  0.07s -bash</code></pre>
 <p><code>w</code></p>
 <pre class="bash"><code>id</code></pre>
 <pre><code>## uid=1012(OLIVIAGOLSTON) gid=1014(OLIVIAGOLSTON) groups=1014(OLIVIAGOLSTON) context=system_u:system_r:initrc_t:s0</code></pre>
 <p><code>id</code></p>
 <pre class="bash"><code>last | head</code></pre>
-<pre><code>## huazhou  pts/0        108-64-58-205.li Fri Jan 15 19:36 - 20:24  (00:47)    
-## jdverajo pts/3        181.199.46.0     Fri Jan 15 18:08 - 18:26  (00:18)    
-## jdverajo pts/2        181.199.46.0     Fri Jan 15 17:55 - 18:27  (00:31)    
-## jdverajo pts/1        181.199.46.0     Fri Jan 15 17:35 - 18:26  (00:51)    
-## mia.chen pts/0        154.17.13.54     Fri Jan 15 14:00 - 14:31  (00:30)    
-## mia.chen pts/0        131.179.158.23   Fri Jan 15 11:26 - 11:49  (00:23)    
-## hunanzho pts/1        47.145.211.101   Fri Jan 15 06:55 - 08:14  (01:18)    
-## hunanzho pts/0        47.145.211.101   Fri Jan 15 06:31 - 08:15  (01:43)    
-## ajedward pts/0        cpe-98-149-10-21 Fri Jan 15 02:56 - 03:20  (00:23)    
-## mia.chen pts/1        131.179.156.36   Fri Jan 15 02:17 - 03:49  (01:32)</code></pre>
-<p><code>last | head</code></p>
+<pre><code>## OLIVIAGO pts/4        108-64-213-148.l Sun Jan 17 03:39   still logged in   
+## OLIVIAGO pts/2        108-64-213-148.l Sun Jan 17 03:03 - 03:31  (00:28)    
+## dshehtan pts/2        cpe-45-51-98-96. Sun Jan 17 01:30 - 03:01  (01:30)    
+## kmishimo pts/3        ip174-67-246-239 Sun Jan 17 00:08 - 00:16  (00:08)    
+## dshehtan pts/2        cpe-45-51-98-96. Sat Jan 16 22:32 - 00:30  (01:58)    
+## asburyse pts/3        c-73-157-156-163 Sat Jan 16 21:54 - 22:18  (00:23)    
+## asburyse pts/3        c-73-157-156-163 Sat Jan 16 21:41 - 21:54  (00:13)    
+## asburyse pts/3        c-73-157-156-163 Sat Jan 16 21:39 - 21:40  (00:01)    
+## asburyse pts/3        c-73-157-156-163 Sat Jan 16 21:35 - 21:39  (00:03)    
+## asburyse pts/0        c-73-157-156-163 Sat Jan 16 20:06 - 20:34  (00:27)</code></pre>
+<p><code>last | head</code> gives the most recent 10 entries (<code>head</code>) from a list of logins into the server (given by <code>last</code>). This list gives usernames, date, log-in and log-out times, and other information.</p>
 <pre class="bash"><code>echo {con,pre}{sent,fer}{s,ed}</code></pre>
 <pre><code>## consents consented confers confered presents presented prefers prefered</code></pre>
-<p><code>echo {con,pre}{sent,fer}{s,ed}</code></p>
+<p><code>echo {con,pre}{sent,fer}{s,ed}</code> prints all 8 combinations the given word parts. There are three “positions”, each with two possible entries, for a total of <code>2 * 2 * 2 = 8</code> total words to display.</p>
 <pre class="bash"><code>time sleep 5</code></pre>
 <pre><code>## 
 ## real 0m5.002s
-## user 0m0.001s
+## user 0m0.002s
 ## sys  0m0.000s</code></pre>
-<p><code>time sleep 5</code></p>
+<p><code>time sleep 5</code> tells the system to sleep for 5 seconds (<code>sleep 5</code>), and then prints the time that it took to do that command (<code>time</code>).</p>
 <pre class="bash"><code>history | tail</code></pre>
-<p><code>history | tail</code></p>
+<p><code>history | tail</code> gives the most recent 10 commands that I have executed. As the most recently typed command, <code>history | tail</code> is at the bottom of this list.</p>
 </div>
 </div>
 
