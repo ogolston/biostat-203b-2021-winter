@@ -65,6 +65,22 @@ Please, do **not** put these data files into Git; they are big. Do **not** copy 
 
 3. Display the contents in the folders `core`, `hosp`, `icu`. What are the functionalities of the bash commands `zcat`, `zless`, `zmore`, and `zgrep`? 
 
+
+**Solution**:  
+
+    ```{bash, eval=F}
+    ls -l /usr/203b-data/mimic-iv/core/
+    ```
+    
+    ```{bash}
+    ls -l /usr/203b-data/mimic-iv/hosp/
+    ```
+    
+    ```{bash}
+    ls -l /usr/203b-data/mimic-iv/icu/
+    ```
+`zcat`, `zless`, `zmore`, and `zgrep` function like similar to `cat`, `less`, `more`, and `grep`, but work for compressed data files.
+
 4. What's the output of following bash script?
     ```{bash, eval=F}
     for datafile in /usr/203b-data/mimic-iv/core/*.gz
@@ -74,7 +90,25 @@ Please, do **not** put these data files into Git; they are big. Do **not** copy 
     ```
 Display the number of lines in each data file using a similar loop.
 
+**Solution**: the given loop outputs the files found within the "core" directory, along with the permissions and other information. The three files in the core directory are admissions.csv, patients.csv, and transfers.csv. They all have -rw-r--r-- permissions.  
+
+    ```{bash}
+    for datafile in /usr/203b-data/mimic-iv/core/*.gz
+      do
+        awk 'END { print NR }' $datafile
+      done
+    ```
+**Solution** There are 65081, 6344, and 184657 lines respectively. 
+
 4. Display the first few lines of `admissions.csv.gz`. How many rows are in this data file? How many unique patients (identified by `subject_id`) are in this data file? What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, `language`, `marital_status`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq`, `wc`, and so on.)
+
+    ```{bash}
+    
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | head
+    
+    
+    ```
+
 
 ## Q3. Who's popular in Price and Prejudice
 
@@ -84,7 +118,10 @@ Display the number of lines in each data file using a similar loop.
     ```
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
 
-```{r}
+```{bash}
+
+  awk 'END { print NR }' pride_and_prejudice.txt
+
 
 ```
 
