@@ -119,9 +119,11 @@ Display the number of lines in each data file using a similar loop.
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
 
 ```{bash}
-
-  awk 'END { print NR }' pride_and_prejudice.txt
-
+  for name in "Elizabeth" "Jane" "Lydia" "Darcy"
+    do
+      echo $name:
+      grep -io $name pride_and_prejudice.txt | wc -l
+    done
 
 ```
 
