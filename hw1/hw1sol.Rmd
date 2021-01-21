@@ -39,6 +39,7 @@ sessionInfo()
 
 **Solution**: Will do.
 
+
 ## Q2. Linux Shell Commands
 
 1. This exercise (and later in this course) uses the [MIMIC-IV data](https://mimic-iv.mit.edu), a freely accessible critical care database developed by the MIT Lab for Computational Physiology. Follow the instructions at <https://mimic-iv.mit.edu/docs/access/> to (1) complete the CITI `Data or Specimens Only Research` course and (2) obtain the PhysioNet credential for using the MIMIC-IV data. Display the verification links to your completion report and completion certificate here. (Hint: The CITI training takes a couple hours and the PhysioNet credentialing takes a couple days; do not leave it to the last minute.)
@@ -72,14 +73,37 @@ Please, do **not** put these data files into Git; they are big. Do **not** copy 
     ls -l /usr/203b-data/mimic-iv/core/
     ```
     
-    ```{bash}
+    ```{bash echo=F}
     ls -l /usr/203b-data/mimic-iv/hosp/
     ```
     
-    ```{bash}
+    ```{bash echo=F}
     ls -l /usr/203b-data/mimic-iv/icu/
     ```
-`zcat`, `zless`, `zmore`, and `zgrep` function like similar to `cat`, `less`, `more`, and `grep`, but work for compressed data files.
+
+```{bash, echo=F}
+   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | head
+
+```
+
+```{bash, echo=F}
+   zless /usr/203b-data/mimic-iv/core/admissions.csv.gz
+```
+
+```{bash, echo=F}
+   zmore /usr/203b-data/mimic-iv/core/admissions.csv.gz
+```
+
+```{bash, echo=F}
+   zgrep 'PHYSICIAN' /usr/203b-data/mimic-iv/core/admissions.csv.gz | head
+```
+
+`zcat`, `zless`, `zmore`, and `zgrep` function like `cat`, `less`, `more`, and `grep`, but work for compressed data files.
+
+`zcat` prints the contents of a compressed file
+`zless` allows you to browse a compressed file using the functionality of `less`
+`zmore` allows you to browse a compressed file using the functionality of `more`
+`zgrep` allows you to search for certain characters within a compressed file
 
 4. What's the output of following bash script?
     ```{bash, eval=F}
@@ -92,7 +116,7 @@ Display the number of lines in each data file using a similar loop.
 
 **Solution**: the given loop outputs the files found within the "core" directory, along with the permissions and other information. The three files in the core directory are admissions.csv, patients.csv, and transfers.csv. They all have -rw-r--r-- permissions.  
 
-    ```{bash}
+    ```{bash echo=F}
     for datafile in /usr/203b-data/mimic-iv/core/*.gz
       do
         awk 'END { print NR }' $datafile
@@ -102,13 +126,45 @@ Display the number of lines in each data file using a similar loop.
 
 4. Display the first few lines of `admissions.csv.gz`. How many rows are in this data file? How many unique patients (identified by `subject_id`) are in this data file? What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, `language`, `marital_status`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq`, `wc`, and so on.)
 
-    ```{bash}
+```{bash echo=F}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | head
+```
     
-    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | head
+Columns in order : 
+1) subject_id
+2) hadm_id
+3) admittime
+4) dischtime
+5) deathtime
+6) admission_type
+7) admission_location
+8) discharge_location
+9) insurance
+10) language
+11) marital_status
+12) ethnicity
+13) edregtime
+14) edouttime
+15) hospital_expire_flag    
     
-    
-    ```
+```{bash}
+  awk 'END { print NR }' /usr/203b-data/mimic-iv/core/admissions.csv.gz
+  wc -l /usr/203b-data/mimic-iv/core/admissions.csv.gz
+```
+There are 65081 lines
 
+
+
+What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, `language`, `marital_status`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq`, `wc`, and so on.)
+
+```{bash}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |
+      awk -F, '{ print $1 }' | uniq | wc - l
+```
+```{bash}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |
+      awk -F, '{ print $6 }' | uniq | head
+```
 
 ## Q3. Who's popular in Price and Prejudice
 
@@ -245,13 +301,13 @@ echo {con,pre}{sent,fer}{s,ed}
 ```
 `echo {con,pre}{sent,fer}{s,ed}` prints all 8 combinations the given word parts. There are three "positions", each with two possible entries, for a total of `2 * 2 * 2 = 8` total words to display.  
 
-```{bash}
+```{bash echo=F}
 time sleep 5
 ```
 `time sleep 5` tells the system to sleep for 5 seconds (`sleep 5`), and then prints the time that it took to do that command (`time`).
 
 
-```{bash}
+```{bash echo=F}
 history | tail
 ```
 `history | tail` gives the most recent 10 commands that I have executed. As the most recently typed command, `history | tail` is at the bottom of this list.    
