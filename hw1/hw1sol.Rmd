@@ -154,16 +154,46 @@ Columns in order :
 There are 65081 lines
 
 
-
-What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, `language`, `marital_status`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq`, `wc`, and so on.)
-
 ```{bash}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |
-      awk -F, '{ print $1 }' | uniq | wc - l
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $1 }' | 
+  sort | uniq | wc -l
 ```
+
+### Admission Type
 ```{bash}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |
-      awk -F, '{ print $6 }' | uniq | head
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $6 }' | 
+  sort | uniq -c 
+```
+
+### Admission Location
+```{bash}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $7 }' | 
+  sort | uniq -c 
+```
+
+### Insurance
+```{bash}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $9 }' | 
+  sort | uniq -c 
+```
+### Language
+```{bash}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $10 }' | 
+  sort | uniq -c 
+```
+
+
+### Marital Status
+```{bash}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $11 }' | 
+  sort | uniq -c 
+```
+
+
+### Ethnicity
+```{bash}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $12 }' | 
+  sort | uniq -c 
 ```
 
 ## Q3. Who's popular in Price and Prejudice
