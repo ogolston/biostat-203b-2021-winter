@@ -258,93 +258,107 @@ Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this sh
 Try these commands in Bash and interpret the results: `cal`, `cal 2021`, `cal 9 1752` (anything unusual?), `date`, `hostname`, `arch`, `uname -a`, `uptime`, `who am i`, `who`, `w`, `id`, `last | head`, `echo {con,pre}{sent,fer}{s,ed}`, `time sleep 5`, `history | tail`.
 
 
-**Solution**: 
+**Solution**: `cal` displays the calendar for the current month:
 ```{bash}
 cal
 ```
-`cal` displays the calendar for the current month. 
 
 
+`cal 2021` displays a calendar for the year 2021: 
 ```{bash}
 cal 2021
 ```
-`cal 2021` calendar for the year 2021. Substituting another year would show the calendar for the specified year.
 
+
+`cal 9 1752` displays a calendar for September of 1752: 
 ```{bash}
 cal 9 1752
 ```
-`cal 9 1752` displays a calendar for the requested month in the requested year. Strangely, the month of September in 1752 had 11 days missing! This was done during the switch to the Gregorian calendar.
+Strangely, the month of September in 1752 had 11 days missing! This was done during the switch to the Gregorian calendar.  
+  
 
+`date` gives the current day of the week, month, day, and time in Coordinated Universal Time:
 ```{bash}
 date
 ```
-`date` gives the current day of the week, month, day, and time in Coordinated Universal Time.
 
+
+`hostname` gives the hostname for the system in use: 
 ```{bash}
 hostname
 ```
-`hostname` gives the name of the server. In this case, that is ucla-biostat-203b
+Since I'm executing this command from within the teaching server, this prints the name of our server, `ucla-biostat-203b`. 
+  
+  
 
+`arch` prints out my computer architecture:
 ```{bash}
 arch
 ```
-`arch` prints out the computer architecture. For me, this is x86_64.
 
+
+`uname -a` prints out system information, including kernel name and version, hostname, and machine and operating system information:
 ```{bash}
 uname -a
 ```
-`uname -a` prints out detail about the current user, server, and timing. For example, it will print the operating system, server/network name, computer architecture, and date.
 
 
+`uptime` gives some information about the system. Specifically, the current time (in UTC), followed by the amount of the time the server has been up, the number of logged in users, and the system load averages:
 ```{bash}
 uptime
 ```
 
-`uptime` gives some statistics about the system. Specifically, the current time (in UTC), followed by the amount of the time the system has been up, the number of logged in users, and system load averages.
 
-
+`who am i` outputs my username, date/time of last login to the server, and my IP address. Note: this command does not seem to be working from within RStudio, but works in the command line.
 ```{bash}
-whoami
+who am i
 ```
-`who am i` didn't run, but `whoami` gives my username, OLIVIAGOLSTON.
+  
 
-
+`who` lists all users who are currently logged into the server and gives their login time and IP address:
 ```{bash}
 who
 ```
-`who` lists users who are currently logged into the system and some info about them. 
 
 
+
+`w` gives information about how is currently logged in. It expands upon the information given in `who` by also providing idle time, time spent on processes, and what type of command they have most recently run:
 ```{bash}
 w
 ```
-`w` gives information about how is currently logged in. It expands upon the information given in `who` by also providing idle time, time spent on processes.
 
+
+
+`id` gives my own user and group id/name:
 ```{bash}
 id
 ```
-`id` gives my own user and group id information.
 
 
+`last | head` gives the most recent 10 entries from the list of logins into the server (given by `last`). This list gives usernames, ip address, and session log-in and log-out times:
 ```{bash}
 last | head
 ```
-`last | head` gives the most recent 10 entries (`head`) from a list of logins into the server (given by `last`). This list gives usernames, date, log-in and log-out times, and other information. 
 
+
+`echo {con,pre}{sent,fer}{s,ed}` prints all combinations of the given word parts. There are three "positions", each with two possible entries, for a total of `2 * 2 * 2 = 8` total words to display:  
 ```{bash}
 echo {con,pre}{sent,fer}{s,ed}
 ```
-`echo {con,pre}{sent,fer}{s,ed}` prints all 8 combinations of the given word parts. There are three "positions", each with two possible entries, for a total of `2 * 2 * 2 = 8` total words to display.  
 
-```{bash eval=F}
+  
+`time sleep 5` tells the system to sleep for 5 seconds (`sleep 5`), and then prints the time that it took to do that command (`time`):
+```{bash}
 time sleep 5
 ```
-`time sleep 5` tells the system to sleep for 5 seconds (`sleep 5`), and then prints the time that it took to do that command (`time`).
+In this output, `real` is the "real" time elapsed (5 seconds), whereas `user` and `sys` give "CPU time" needed to execute the command.
+  
+  
 
-
+`history | tail` gives the most recent 10 commands that I have executed:
 ```{bash}
-echo "test line 1" 
-echo "test line 2"
+echo "test line. second most recent" 
+echo "test line. most recent"
 history | tail
 ```
-`history | tail` gives the most recent 10 commands that I have executed. As the most recently typed command, `history | tail` is at the bottom of this list.    
+In the terminal, `history | tail` shows up at the bottom of this list. It is not showing up properly in Rstudio, but the test lines show the functionality.
