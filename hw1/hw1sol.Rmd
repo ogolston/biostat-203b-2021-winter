@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Display machine information for reproducibility:
-```{r, eval=F}
+```{r}
 sessionInfo()
 ```
 
@@ -70,140 +70,137 @@ Please, do **not** put these data files into Git; they are big. Do **not** copy 
 
 **Solution**:  
 
-```{bash, eval=F}
+```{bash}
   ls -l /usr/203b-data/mimic-iv/core/
 ```
     
-```{bash eval=F}
+```{bash}
   ls -l /usr/203b-data/mimic-iv/hosp/
 ```
     
-```{bash eval=F}
+```{bash}
   ls -l /usr/203b-data/mimic-iv/icu/
 ```
 
-`zcat`, `zless`, `zmore`, and `zgrep` function like `cat`, `less`, `more`, and `grep`, but work for compressed data files.
+`zcat`, `zless`, `zmore`, and `zgrep` function like `cat`, `less`, `more`, and
+`grep`, but work for compressed data files.
 
 ```{bash, eval=F}
    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | head
 ```
-
 `zcat` prints the contents of a compressed file
 
 
 ```{bash, eval=F}
    zless /usr/203b-data/mimic-iv/core/admissions.csv.gz
 ```
-
 `zless` allows you to browse a compressed file using the functionality of `less`
 
 
 ```{bash, eval=F}
    zmore /usr/203b-data/mimic-iv/core/admissions.csv.gz
 ```
-
 `zmore` allows you to browse a compressed file using the functionality of `more`
 
 ```{bash, eval=F}
    zgrep 'PHYSICIAN' /usr/203b-data/mimic-iv/core/admissions.csv.gz | head
 ```
-
 `zgrep` allows you to search for certain characters within a compressed file
 
 
 
-4. What's the output of following bash script?
-    ```{bash, eval=F}
-    for datafile in /usr/203b-data/mimic-iv/core/*.gz
-      do
-        ls -l $datafile
-      done
-    ```
-Display the number of lines in each data file using a similar loop.
+4. What's the output of following bash script? Display the number of lines in each data file using a similar loop.
 
-**Solution**: the given loop outputs the files found within the "core" directory, along with the permissions and other information. The three files in the core directory are admissions.csv, patients.csv, and transfers.csv. They all have -rw-r--r-- permissions.  
+```{bash, eval=F}
+  for datafile in /usr/203b-data/mimic-iv/core/*.gz
+    do
+      ls -l $datafile
+    done
+```
 
-    ```{bash eval=F}
-    for datafile in /usr/203b-data/mimic-iv/core/*.gz
-      do
-        zcat $datafile | wc -l
-      done
-    ```
+
+**Solution**: the above loop outputs the files found within the "core" directory, 
+along with the permissions and other file information. The three files in the 
+core directory are  admissions.csv.gz, patients.csv.gz, and transfers.csv.gz. 
+They all have -rw-r--r-- permissions.  
+
+```{bash}
+  for datafile in /usr/203b-data/mimic-iv/core/*.gz
+    do
+      echo $datafile: 
+      zcat $datafile | wc -l
+    done
+```
 **Solution** There are 524521, 383221, and 2192964 lines respectively. 
 
 4. Display the first few lines of `admissions.csv.gz`. How many rows are in this data file? How many unique patients (identified by `subject_id`) are in this data file? What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, `language`, `marital_status`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq`, `wc`, and so on.)
 
-```{bash eval=F}
+**Solution**
+
+```{bash}
   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | head
 ```
+The first line gives the variables. In order, the variables are: 1) subject_id, 2) hadm_id,
+3) admittime, 4) dischtime, 5) deathtime, 6) admission_type, 7) admission_location,
+8) discharge_location, 9) insurance, 10) language, 11) marital_status, 12) ethnicity,
+13) edregtime, 14) edouttime, 15) hospital_expire_flag    
+
+The observations begin with line 2. 
     
-Columns in order : 
-1) subject_id
-2) hadm_id
-3) admittime
-4) dischtime
-5) deathtime
-6) admission_type
-7) admission_location
-8) discharge_location
-9) insurance
-10) language
-11) marital_status
-12) ethnicity
-13) edregtime
-14) edouttime
-15) hospital_expire_flag    
-    
-```{bash eval=F}
+```{bash}
   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | wc -l
 ```
-There are 524521 lines.
+There are 524521 lines in the admissions file.
 
 
-```{bash eval=F}
+```{bash}
   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, ' { print $1 }' | 
   sort -u | wc -l
 ```
-```{bash eval=F}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, ' { print $1 }' | 
-  sort | head
-```
+Though there are 524521 lines in the admissions data, there are only 257367 unique ids in the admissions data.  Some patients were admitted multiple times, 257367 is the true number of unique patients. 
 
 
-### Admission Type
-```{bash eval=F}
+The following code chunks find the possible values for various variables, as well as the count 
+of admissions with each characteristic.
+
+##### Admission Type
+```{bash}
    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $6 }' | 
    sort | uniq -c 
   
 ```
+The admission types range from surgical admissions to observation to urgent admissions.
 
-### Admission Location
-```{bash eval=F}
+##### Admission Location
+```{bash}
   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $7 }' | 
   sort | uniq -c 
 ```
+It appears that, in addition to lots of specific admission locations, there are over 60000
+records with no admission location recorded.
 
-### Insurance
-```{bash eval=F}
+##### Insurance
+```{bash}
   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $9 }' | 
   sort | uniq -c 
 ```
-### Language
-```{bash eval=F}
+##### Language
+```{bash}
   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $10 }' | 
   sort | uniq -c 
 ```
+Interestingly, the only language option seems to be English. Everything else is coded as 
+?. 
 
-
-### Marital Status
-```{bash eval=F}
+##### Marital Status
+```{bash}
   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $11 }' | 
   sort | uniq -c 
 ```
+Over 60000 have no marital information recorded. 
 
-
-### Ethnicity
-```{bash eval=F}
+##### Ethnicity
+```{bash}
   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $12 }' | 
   sort | uniq -c 
 ```
@@ -224,7 +221,7 @@ Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` lo
     done
 
 ```
-
+Elizabeth is the most mentioned, with 634 mentions in the book. Darcy is in second place, with 418.  
 
 
 2. What's the difference between the following two commands?
@@ -235,7 +232,6 @@ Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` lo
     ```{bash eval=FALSE}
     echo 'hello, world' >> test2.txt
     ```
-
 
 **Solution**: The command `echo 'hello, world' > test1.txt ` writes 'hello, world' to the test1 text file. If there is already text in the file, it will be overwritten. Thus, the result of this command - no matter how many times it is run - will be a file with 'hello, world' written one time.  
 The command `echo 'hello, world' >> test2.txt` appends 'hello, world' to the test2 text file. If there is already text in the file, it will **not** be overwritten. Thus, the result of running this command 4 times would be a file with 'hello, world' written 4 times. 
@@ -253,7 +249,7 @@ Using `chmod` make the file executable by the owner, and run
     ```
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
 
-**Solution**: The output is the Author and Editor of Pride and Prejudice. The first line is included to specify what shell the program needs to be executed with (sh). This might be especially important if using the script on a different system, which may be using a different shell by default. 
+**Solution**: The output is the Author and Editor of Pride and Prejudice. The first line is included to specify what shell the program should be executed with (sh). 
 
 `"$1"`, `"$2"`, and `"$3"` refer to the arguments for the script. The resulting program takes the first `$2` (in this case, 20) lines of file `"$1"` (`pride_and_prejudice.txt`). These lines are piped to the next command, which takes the last `$3` (5) lines.  For these particular arguments, the result is the 15th through 20th lines of the Pride and Prejudice text. 
 
@@ -308,29 +304,26 @@ uptime
 
 
 ```{bash}
-who am i
+whoami
 ```
-
-`who am i` ???
+`who am i` didn't run, but `whoami` gives my username, OLIVIAGOLSTON.
 
 
 ```{bash}
 who
 ```
-
-`who`
+`who` lists users who are currently logged into the system and some info about them. 
 
 
 ```{bash}
 w
 ```
-`w`
+`w` gives information about how is currently logged in. It expands upon the information given in `who` by also providing idle time, time spent on processes.
 
 ```{bash}
 id
 ```
-
-`id`
+`id` gives my own user and group id information.
 
 
 ```{bash}
@@ -341,15 +334,17 @@ last | head
 ```{bash}
 echo {con,pre}{sent,fer}{s,ed}
 ```
-`echo {con,pre}{sent,fer}{s,ed}` prints all 8 combinations the given word parts. There are three "positions", each with two possible entries, for a total of `2 * 2 * 2 = 8` total words to display.  
+`echo {con,pre}{sent,fer}{s,ed}` prints all 8 combinations of the given word parts. There are three "positions", each with two possible entries, for a total of `2 * 2 * 2 = 8` total words to display.  
 
-```{bash echo=F}
+```{bash eval=F}
 time sleep 5
 ```
 `time sleep 5` tells the system to sleep for 5 seconds (`sleep 5`), and then prints the time that it took to do that command (`time`).
 
 
-```{bash echo=F}
+```{bash}
+echo "test line 1" 
+echo "test line 2"
 history | tail
 ```
 `history | tail` gives the most recent 10 commands that I have executed. As the most recently typed command, `history | tail` is at the bottom of this list.    
