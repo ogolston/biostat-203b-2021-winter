@@ -126,10 +126,10 @@ Display the number of lines in each data file using a similar loop.
     ```{bash eval=F}
     for datafile in /usr/203b-data/mimic-iv/core/*.gz
       do
-        awk 'END { print NR }' $datafile
+        zcat $datafile | wc -l
       done
     ```
-**Solution** There are 65081, 6344, and 184657 lines respectively. 
+**Solution** There are 524521, 383221, and 2192964 lines respectively. 
 
 4. Display the first few lines of `admissions.csv.gz`. How many rows are in this data file? How many unique patients (identified by `subject_id`) are in this data file? What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, `language`, `marital_status`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq`, `wc`, and so on.)
 
@@ -155,51 +155,56 @@ Columns in order :
 15) hospital_expire_flag    
     
 ```{bash eval=F}
-  awk 'END { print NR }' /usr/203b-data/mimic-iv/core/admissions.csv.gz
-  wc -l /usr/203b-data/mimic-iv/core/admissions.csv.gz
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | wc -l
 ```
-There are 65081 lines
+There are 524521 lines.
 
 
 ```{bash eval=F}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $1 }' | 
-  sort | uniq | wc -l
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, ' { print $1 }' | 
+  sort -u | wc -l
 ```
+```{bash eval=F}
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, ' { print $1 }' | 
+  sort | head
+```
+
 
 ### Admission Type
 ```{bash eval=F}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $6 }' | 
-  sort | uniq -c 
+   zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $6 }' | 
+   sort | uniq -c 
+  
 ```
 
 ### Admission Location
 ```{bash eval=F}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $7 }' | 
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $7 }' | 
   sort | uniq -c 
 ```
 
 ### Insurance
 ```{bash eval=F}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $9 }' | 
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $9 }' | 
   sort | uniq -c 
 ```
 ### Language
 ```{bash eval=F}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $10 }' | 
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $10 }' | 
   sort | uniq -c 
 ```
 
 
 ### Marital Status
 ```{bash eval=F}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $11 }' | 
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $11 }' | 
   sort | uniq -c 
 ```
 
 
 ### Ethnicity
 ```{bash eval=F}
-  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{ print $12 }' | 
+  zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk -F, '{if (FNR > 1) print $12 }' | 
   sort | uniq -c 
 ```
 
