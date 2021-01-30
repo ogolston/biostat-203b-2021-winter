@@ -380,9 +380,13 @@ summary {
 
 <div id="TOC">
 <ul>
-<li><a href="#q1.-physionet-credential">Q1. PhysioNet credential</a></li>
+<li><a href="#q1.-physionet-credential">Q1. PhysioNet credential</a><ul>
+<li><a href="#finish-this-later">Finish this later</a></li>
+</ul></li>
 <li><a href="#q2.-read.csv-base-r-vs-read_csv-tidyverse-vs-fread-data.table">Q2. <code>read.csv</code> (base R) vs <code>read_csv</code> (tidyverse) vs <code>fread</code> (data.table)</a></li>
-<li><a href="#q3.-icu-stays">Q3. ICU stays</a></li>
+<li><a href="#q3.-icu-stays">Q3. ICU stays</a><ul>
+<li><a href="#solution">Solution</a></li>
+</ul></li>
 <li><a href="#q4.-admission-data">Q4. <code>admission</code> data</a></li>
 <li><a href="#q5.-patient-data">Q5. <code>patient</code> data</a></li>
 <li><a href="#q6.-lab-results">Q6. Lab results</a></li>
@@ -491,11 +495,57 @@ if (str_detect(os, &quot;Linux&quot;)) {
 <div id="q1.-physionet-credential" class="section level2">
 <h2>Q1. PhysioNet credential</h2>
 <p>At this moment, you should already get credentialed on the PhysioNet. Please include a screenshot of your <code>Data Use Agreement for the MIMIC-IV (v0.4)</code>.</p>
+<div id="finish-this-later" class="section level4">
+<h4>Finish this later</h4>
+<p><strong>Solution</strong>: <a href>Here is the image</a></p>
+</div>
 </div>
 <div id="q2.-read.csv-base-r-vs-read_csv-tidyverse-vs-fread-data.table" class="section level2">
 <h2>Q2. <code>read.csv</code> (base R) vs <code>read_csv</code> (tidyverse) vs <code>fread</code> (data.table)</h2>
 <p>There are quite a few utilities in R for reading data files. Let us test the speed of reading a moderate sized compressed csv file, <code>admissions.csv.gz</code>, by three programs: <code>read.csv</code> in base R, <code>read_csv</code> in tidyverse, and <code>fread</code> in the popular data.table package. Is there any speed difference?</p>
 <p>In this homework, we stick to the tidyverse.</p>
+<pre class="r"><code>file_path &lt;- str_c(mimic_path, &quot;/core/admissions.csv.gz&quot;)
+
+start_time &lt;- Sys.time()
+file1 &lt;- read.csv(file_path)
+end_time &lt;- Sys.time()
+diff &lt;- end_time - start_time
+print(str_c(&quot;read.csv:&quot;, diff))</code></pre>
+<pre><code>## [1] &quot;read.csv:44.7353117465973&quot;</code></pre>
+<pre class="r"><code>start_time &lt;- Sys.time()
+file2 &lt;- read_csv(file_path)
+end_time &lt;- Sys.time()
+diff2 &lt;- end_time - start_time
+print(str_c(&quot;read_csv:&quot;, diff))</code></pre>
+<pre><code>## [1] &quot;read_csv:44.7353117465973&quot;</code></pre>
+<pre class="r"><code>start_time &lt;- Sys.time()
+file3 &lt;- fread(file_path)
+end_time &lt;- Sys.time()
+diff3 &lt;- end_time - start_time
+print(str_c(&quot;fread:&quot;, diff))</code></pre>
+<pre><code>## [1] &quot;fread:44.7353117465973&quot;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Execution Time</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>read.csv</td>
+<td>44.7353117</td>
+</tr>
+<tr class="even">
+<td>read_csv</td>
+<td>6.3211598</td>
+</tr>
+<tr class="odd">
+<td>fread</td>
+<td>3.2454524</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="q3.-icu-stays" class="section level2">
 <h2>Q3. ICU stays</h2>
@@ -511,6 +561,48 @@ if (str_detect(os, &quot;Linux&quot;)) {
 </li>
 <li>last ICU unit</li>
 </ul>
+<div id="solution" class="section level3">
+<h3>Solution</h3>
+<p>Read in <code>icustays</code> data.</p>
+<pre class="r"><code>icu_stays &lt;- read_csv(str_c(mimic_path, &quot;/icu/icustays.csv.gz&quot;)) %&gt;%
+  print()</code></pre>
+<pre><code>## 
+## ── Column specification ────────────────────────────────────────────────────────
+## cols(
+##   subject_id = col_double(),
+##   hadm_id = col_double(),
+##   stay_id = col_double(),
+##   first_careunit = col_character(),
+##   last_careunit = col_character(),
+##   intime = col_datetime(format = &quot;&quot;),
+##   outtime = col_datetime(format = &quot;&quot;),
+##   los = col_double()
+## )</code></pre>
+<pre><code>## # A tibble: 69,619 x 8
+##    subject_id hadm_id stay_id first_careunit last_careunit intime             
+##         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;dttm&gt;             
+##  1   17823467  2.76e7  3.60e7 Coronary Care… Coronary Car… 2138-05-09 05:08:00
+##  2   15772648  2.61e7  3.96e7 Trauma SICU (… Trauma SICU … 2146-06-18 18:35:00
+##  3   13713711  2.58e7  3.64e7 Trauma SICU (… Trauma SICU … 2157-09-15 15:30:00
+##  4   13173210  2.23e7  3.82e7 Coronary Care… Coronary Car… 2178-02-12 17:13:50
+##  5   10213765  2.85e7  3.98e7 Trauma SICU (… Trauma SICU … 2113-04-10 14:11:00
+##  6   17530304  2.18e7  3.58e7 Trauma SICU (… Trauma SICU … 2129-03-21 07:09:00
+##  7   10297774  2.04e7  3.78e7 Coronary Care… Coronary Car… 2194-05-10 21:35:40
+##  8   16766597  2.12e7  3.93e7 Trauma SICU (… Trauma SICU … 2115-07-11 23:15:59
+##  9   17684317  2.87e7  3.70e7 Trauma SICU (… Trauma SICU … 2148-04-14 22:03:00
+## 10   15693895  2.12e7  3.48e7 Surgical Inte… Surgical Int… 2147-06-02 23:31:46
+## # … with 69,609 more rows, and 2 more variables: outtime &lt;dttm&gt;, los &lt;dbl&gt;</code></pre>
+<p>Check number of unique <code>stay_id</code> values</p>
+<pre class="r"><code>icu_stays %&gt;%
+  distinct(stay_id) %&gt;%
+  nrow()</code></pre>
+<pre><code>## [1] 69619</code></pre>
+<p>Check number of unique <code>subject_id</code> values</p>
+<pre class="r"><code>icu_stays %&gt;%
+  distinct(subject_id) %&gt;%
+  nrow()</code></pre>
+<pre><code>## [1] 50048</code></pre>
+</div>
 </div>
 <div id="q4.-admission-data" class="section level2">
 <h2>Q4. <code>admission</code> data</h2>

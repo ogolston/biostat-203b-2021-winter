@@ -40,13 +40,48 @@ system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 At this moment, you should already get credentialed on the PhysioNet. Please include a screenshot of your `Data Use Agreement for the MIMIC-IV (v0.4)`.
 
 
-**Solution**
+#### Finish this later
+**Solution**: [Here is the image]()
 
 ## Q2. `read.csv` (base R) vs `read_csv` (tidyverse) vs `fread` (data.table)
 
 There are quite a few utilities in R for reading data files. Let us test the speed of reading a moderate sized compressed csv file, `admissions.csv.gz`, by three programs: `read.csv` in base R, `read_csv` in tidyverse, and `fread` in the popular data.table package. Is there any speed difference?
 
 In this homework, we stick to the tidyverse. 
+
+```{r message=F}
+file_path <- str_c(mimic_path, "/core/admissions.csv.gz")
+
+start_time <- Sys.time()
+file1 <- read.csv(file_path)
+end_time <- Sys.time()
+diff <- end_time - start_time
+print(str_c("read.csv:", diff))
+
+
+start_time <- Sys.time()
+file2 <- read_csv(file_path)
+end_time <- Sys.time()
+diff2 <- end_time - start_time
+print(str_c("read_csv:", diff))
+
+
+start_time <- Sys.time()
+file3 <- fread(file_path)
+end_time <- Sys.time()
+diff3 <- end_time - start_time
+print(str_c("fread:", diff))
+
+
+```
+
+
+Function | Execution Time
+-------- | -------------
+read.csv | `r diff`   
+read_csv | `r diff2`
+fread    | `r diff3` 
+
 
 ## Q3. ICU stays
 
