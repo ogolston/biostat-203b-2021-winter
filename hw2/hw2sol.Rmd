@@ -123,7 +123,7 @@ icu_stays %>%
   ggplot(aes(x=los)) +
     geom_histogram(binwidth=.5) +
     coord_cartesian(xlim=c(0,50)) +
-    labs(title="Length of Stay", x="Length of Stay (days)")
+    labs(title = "Length of Stay", x = "Length of Stay (days)")
 ```
 
 ```{r}
@@ -140,7 +140,7 @@ icu_stays %>%
   ggplot(aes(x=first_careunit)) +
     geom_bar() +
     coord_flip() +
-    labs(x="First Care Unit")
+    labs(x = "First Care Unit")
 ```
 
 
@@ -149,7 +149,7 @@ icu_stays %>%
   ggplot(aes(x=last_careunit)) +
     geom_bar() +
     coord_flip() +
-    labs(x="Last Care Unit")
+    labs(x = "Last Care Unit")
 ```
 
 
@@ -159,7 +159,7 @@ icu_stays %>%
   ggplot(aes(x=factor(1), fill=first_careunit)) +
     geom_bar(width=1) +
     coord_polar("y") +
-    labs(x="First Care Unit")
+    labs(x = "First Care Unit")
 ```
 
 ```{r}
@@ -167,7 +167,7 @@ icu_stays %>%
   ggplot(aes(x=factor(1), fill=last_careunit)) +
     geom_bar(width=1) +
     coord_polar("y") +
-    labs(x="Last Care Unit")
+    labs(x = "Last Care Unit")
 ```
 
 
@@ -192,6 +192,116 @@ Information of the patients admitted into hospital is available in `ADMISSION.cs
 - death 
 
 Note it is possible that one patient (uniquely identified by the `SUBJECT_ID`) is admitted into hospital multiple times. When summarizing some demographic information, it makes sense to summarize based on unique patients. 
+
+### Solution
+First, we need to read in the admissions data. This dataset will have all admissions.
+```{r}
+admissions <- read_csv(str_c(mimic_path, "/core/admissions.csv.gz")) %>%
+  print()
+``` 
+
+We also want a filtered version of the data that only contains unique patients, as identified by subject_id.
+```{r}
+admissions_unique <- admissions %>%
+  distinct(subject_id, .keep_all = TRUE) %>% 
+  print()
+```
+
+
+- admission year  
+```{r}
+ggplot(data=admissions) +
+  geom_bar(aes(year(admittime)))
+```
+
+
+- admission month  
+```{r}
+ggplot(data=admissions) +
+  geom_bar(aes(month(admittime, label=T))) +
+  labs(title = "Admissions by Month", x = "Month")
+```
+
+
+
+- admission month day 
+```{r}
+ggplot(data=admissions) +
+  geom_bar(aes(day(admittime))) +
+  labs(title = "Admissions by Day of Month", x = "Day of Month")
+```
+
+
+- admission week day  
+```{r}
+ggplot(data=admissions) +
+  geom_bar(aes(wday(admittime, label=T))) +
+  labs(title="Admissions by Day of Week", x="Day of Week")
+```
+
+- admission hour (anything unusual?)  
+```{r}
+ggplot(data=admissions) +
+  geom_bar(aes(hour(admittime))) +
+  labs(title="Admissions by Hour", x="Hour")
+```
+
+- number of deaths in each year  
+```{r}
+admissions %>%
+  filter(!is.na(deathtime)) %>%
+  ggplot() +
+  geom_bar(aes(year(deathtime)))
+```
+
+
+
+- admission type  
+```{r}
+admissions %>%
+  ggplot() +
+  geom_bar(aes(admission_type)) +
+  coord_flip() +
+  labs(x = "Admissions Type")
+```
+
+- number of admissions per patient  
+```{r}
+admissions %>%
+  count(subject_id) %>%
+  ggplot() +
+  geom_bar(aes(n)) 
+```
+
+
+- admission location  
+```{r}
+admissions %>%
+  ggplot() +
+  geom_bar(aes(admission_location)) +
+  coord_flip() +
+  labs(x = "Admission Location")
+```
+
+
+- discharge location  
+```{r}
+admissions %>%
+  ggplot() +
+  geom_bar(aes(discharge_location)) +
+  coord_flip() +
+  labs(x = "Discharge Location")
+```
+- insurance  
+
+- language  
+
+- martial status  
+
+- ethnicity  
+
+- death 
+
 
 ## Q5. `patient` data
 
