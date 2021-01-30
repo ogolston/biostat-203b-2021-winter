@@ -117,6 +117,58 @@ icu_stays %>%
   nrow()
 ```
 
+Visualize length of stay
+```{r}
+icu_stays %>%
+  ggplot(aes(x=los)) +
+    geom_histogram(binwidth=.5) +
+    coord_cartesian(xlim=c(0,50)) +
+    labs(title="Length of Stay", x="Length of Stay (days)")
+```
+
+```{r}
+icu_stays %>%
+  ggplot(aes(x=factor(1), y=los)) +
+    geom_boxplot()
+```
+
+
+
+first_careunit
+```{r}
+icu_stays %>%
+  ggplot(aes(x=first_careunit)) +
+    geom_bar() +
+    coord_flip() +
+    labs(x="First Care Unit")
+```
+
+
+```{r}
+icu_stays %>%
+  ggplot(aes(x=last_careunit)) +
+    geom_bar() +
+    coord_flip() +
+    labs(x="Last Care Unit")
+```
+
+
+
+```{r}
+icu_stays %>%
+  ggplot(aes(x=factor(1), fill=first_careunit)) +
+    geom_bar(width=1) +
+    coord_polar("y") +
+    labs(x="First Care Unit")
+```
+
+```{r}
+icu_stays %>%
+  ggplot(aes(x=factor(1), fill=last_careunit)) +
+    geom_bar(width=1) +
+    coord_polar("y") +
+    labs(x="Last Care Unit")
+```
 
 
 ## Q4. `admission` data
