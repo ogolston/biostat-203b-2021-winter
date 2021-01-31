@@ -344,6 +344,32 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 - `gender`  
 - `anchor_age` (explain pattern you see)
 
+
+
+```{r}
+patients <- read_csv(str_c(mimic_path, "/core/patients.csv.gz")) %>%
+  print()
+```
+
+
+```{r}
+patients %>%
+  ggplot(aes(x=factor(1), fill = gender)) +
+    geom_bar(width=1) +
+    coord_polar("y") +
+    labs(x = "Gender")
+```
+
+
+```{r}
+icu_stays %>%
+  ggplot() +
+    geom_bar(aes(anchor_age)) 
+```
+There is a huge spike at 0, and then no observations until ~age 18. Thus, my best guess is that the age of minors is not recorded, to protect privacy. Instead, they all recieve the age "0." After age 18, the ages appear to be coded as normal.  However, there is another spike at the upper end. Perhaps the system can't keep track of 3 digits for age, or they want to protect the privacy of their oldest patients by grouping their ages. 
+
+
+
 ## Q6. Lab results
 
 `labevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/>) contains all laboratory measurements for patients. 
