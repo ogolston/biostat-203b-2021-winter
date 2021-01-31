@@ -292,16 +292,50 @@ admissions %>%
   coord_flip() +
   labs(x = "Discharge Location")
 ```
+
+
 - insurance  
+```{r}
+admissions_unique %>% 
+  ggplot() +
+  geom_bar(aes(insurance))
+```
+
+
 
 - language  
+```{r}
+admissions_unique %>% 
+  ggplot() +
+  geom_bar(aes(language))
+```
 
-- martial status  
+- martial status
+```{r}
+admissions_unique %>% 
+  ggplot() +
+  geom_bar(aes(marital_status))
+
+```
 
 - ethnicity  
+```{r}
+admissions_unique %>% 
+  ggplot() +
+  geom_bar(aes(ethnicity)) +
+  coord_flip()
+```
 
 - death 
+```{r}
+admissions %>% 
+  group_by(subject_id) %>%
+  count(died = sum(!(is.na(deathtime))) > 0) %>%
+  ggplot() +
+  geom_bar(aes(died))
 
+colnames(admissions_unique)
+```
 
 ## Q5. `patient` data
 
