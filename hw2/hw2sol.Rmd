@@ -97,7 +97,9 @@ fread    | `r diff3`
 Read in `icustays` data.
 
 ```{r}
-icu_stays <- read_csv(str_c(mimic_path, "/icu/icustays.csv.gz")) %>%
+icu_stays <- read_csv(str_c(mimic_path, "/icu/icustays.csv.gz")) 
+
+icu_stays %>%
   print()
 ``` 
 
@@ -196,14 +198,18 @@ Note it is possible that one patient (uniquely identified by the `SUBJECT_ID`) i
 ### Solution
 First, we need to read in the admissions data. This dataset will have all admissions.
 ```{r}
-admissions <- read_csv(str_c(mimic_path, "/core/admissions.csv.gz")) %>%
+admissions <- read_csv(str_c(mimic_path, "/core/admissions.csv.gz")) 
+
+admissions %>%
   print()
 ``` 
 
 We also want a filtered version of the data that only contains unique patients, as identified by subject_id.
 ```{r}
 admissions_unique <- admissions %>%
-  distinct(subject_id, .keep_all = TRUE) %>% 
+  distinct(subject_id, .keep_all = TRUE) 
+
+admissions_unique %>% 
   print()
 ```
 
@@ -347,7 +353,10 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 
 
 ```{r}
-patients <- read_csv(str_c(mimic_path, "/core/patients.csv.gz")) %>%
+patients <- read_csv(str_c(mimic_path, "/core/patients.csv.gz")) 
+
+
+patients %>%
   print()
 ```
 
@@ -411,6 +420,21 @@ We are interested in the vitals for ICU patients: heart rate, mean and systolic 
 
 `d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `ITEMID` in `CHARTEVENTS.csv`. Find potential values of `ITEMID` that correspond to systolic blood pressure, i.e., `LABEL` contains the string `systolic`. 
 
+
+```{r}
+chart_events <- read_csv(str_c(mimic_path, "/icu/chartevents.csv.gz")) %>% 
+  print()
+```
+
+```{r}
+chart_key <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
+  filter(str_detect(label, 'systolic'))
+
+chart_key %>%
+  print()
+```
+
+
 ## Q8. Putting things together
 
 Let us create a tibble for all ICU stays, where rows are  
@@ -424,4 +448,18 @@ and columns contains at least following variables
 - all variables in `admission.csv.gz`  
 - first lab measurements during ICU stay  
 - first vitals measurement during ICU stay  
-- an indicator variable whether the patient died within 30 days of hospital admission  
+- an indicator variable whether the patient died within 30 days of hospital admission 
+
+
+```{r}
+data <- icu_stays %>%
+  distinct(subject_id, .keep_all=T) %>%
+  left_join(patients, by="subject_id") %>%
+  filter(anchor_age >= 18) %>%
+  left_join(admissions, by=c("hadm_id", "subject_id")) %>% 
+  print()
+
+```
+
+
+
