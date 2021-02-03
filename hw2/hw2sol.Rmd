@@ -63,14 +63,14 @@ start_time <- Sys.time()
 file2 <- read_csv(file_path)
 end_time <- Sys.time()
 diff2 <- end_time - start_time
-print(str_c("read_csv:", diff))
+print(str_c("read_csv:", diff2))
 
 
 start_time <- Sys.time()
 file3 <- fread(file_path)
 end_time <- Sys.time()
 diff3 <- end_time - start_time
-print(str_c("fread:", diff))
+print(str_c("fread:", diff3))
 
 
 ```
@@ -383,7 +383,7 @@ There is a huge spike at 0, and then no observations until ~age 18. Thus, my bes
 
 `labevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/>) contains all laboratory measurements for patients. 
 
-We are interested in the lab measurements of creatinine, potassium, sodium, chloride, bicarbonate, hematocrit, white blood cell count, glucose, magnesium, calcium, phosphorus, and lactate. Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
+We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
 
 ```{r}
 labs <- read_csv(str_c(mimic_path, "/hosp/labevents.csv.gz")) %>%
@@ -414,11 +414,12 @@ Still need to find phosphorus and WBC.
 
 ## Q7. Vitals from chartered events
 
-We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate.
+We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate. Find the `itemid`s of these vitals from `d_items.csv.gz` and retrieve a subset of `chartevents.csv.gz` only containing these items.
 
-`chartevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `ITEMID` variable indicates a single measurement type in the database. The `VALUE` variable is the value measured for `ITEMID`. 
+`chartevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `itemid` variable indicates a single measurement type in the database. The `value` variable is the value measured for `itemid`.
 
-`d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `ITEMID` in `CHARTEVENTS.csv`. Find potential values of `ITEMID` that correspond to systolic blood pressure, i.e., `LABEL` contains the string `systolic`. 
+`d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `itemid` in `chartevents.csv.gz`. 
+
 
 
 ```{r}
@@ -442,13 +443,14 @@ Let us create a tibble for all ICU stays, where rows are
 - first ICU stay of each unique patient  
 - adults (age at admission > 18)  
 
-and columns contains at least following variables  
+and columns contain at least following variables  
 
 - all variables in `icustays.csv.gz`  
 - all variables in `admission.csv.gz`  
+- all variables in `patients.csv.gz`  
 - first lab measurements during ICU stay  
 - first vitals measurement during ICU stay  
-- an indicator variable whether the patient died within 30 days of hospital admission 
+- an indicator variable whether the patient died within 30 days of hospital admission  
 
 
 ```{r}
