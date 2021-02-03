@@ -52,35 +52,18 @@ In this homework, we stick to the tidyverse.
 ```{r message=F}
 file_path <- str_c(mimic_path, "/core/admissions.csv.gz")
 
-start_time <- Sys.time()
-file1 <- read.csv(file_path)
-end_time <- Sys.time()
-diff <- end_time - start_time
-print(str_c("read.csv:", diff))
-
-
-start_time <- Sys.time()
-file2 <- read_csv(file_path)
-end_time <- Sys.time()
-diff2 <- end_time - start_time
-print(str_c("read_csv:", diff2))
-
-
-start_time <- Sys.time()
-file3 <- fread(file_path)
-end_time <- Sys.time()
-diff3 <- end_time - start_time
-print(str_c("fread:", diff3))
-
+time1 <- system.time(file1 <- read.csv(file_path))
+time2 <- system.time(file2 <- read_csv(file_path))
+time3 <- system.time(file3 <- fread(file_path))
 
 ```
 
 
 Function | Execution Time
 -------- | -------------
-read.csv | `r diff`   
-read_csv | `r diff2`
-fread    | `r diff3` 
+read.csv | `r time1[3]` 
+read_csv | `r time2[3]`
+fread    | `r time3[3]`
 
 
 ## Q3. ICU stays
@@ -371,7 +354,7 @@ patients %>%
 
 
 ```{r}
-icu_stays %>%
+patients %>%
   ggplot() +
     geom_bar(aes(anchor_age)) 
 ```
@@ -385,7 +368,7 @@ There is a huge spike at 0, and then no observations until ~age 18. Thus, my bes
 
 We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
 
-```{r}
+```{r eval=F}
 if(!file.exists("labevents_icustays.csv.gz")) {
   labs <- fread(str_c(mimic_path, "/hosp/labevents.csv.gz"),
                 select = c("subject_id", "hadm_id", "itemid", 
@@ -407,7 +390,7 @@ labcodes <- read_csv(str_c(mimic_path, "/hosp/d_labitems.csv.gz")) %>%
   print(width=Inf) 
 ```
 
-```{r}
+```{r eval=F}
 labs <- labs %>%
   filter(itemid %in% c("50912", "50971", "50983", "50902", "50882", "51221", 
                       "51301", "50931", "50960", "50893", "50813")) %>%
@@ -424,7 +407,7 @@ We are interested in the vitals for ICU patients: heart rate, mean and systolic 
 
 `chartevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `itemid` variable indicates a single measurement type in the database. The `value` variable is the value measured for `itemid`.
 
-```{r}
+```{r eval=F}
 if(!file.exists("chartevents_icustays.csv.gz")) {
   labs <- fread(str_c(mimic_path, "/icu/chartevents.csv.gz"),
                 select = c("subject_id", "hadm_id", "stay_id", "itemid", 
@@ -444,7 +427,7 @@ chart_events <- fread("chartevents_icustays.csv.gz", nThread = 1)
 
 
 
-```{r}
+```{r eval=F}
 chart_events <- read_csv(str_c(mimic_path, "/icu/chartevents.csv.gz")) %>% 
   print()
 ```
@@ -475,7 +458,7 @@ and columns contain at least following variables
 - an indicator variable whether the patient died within 30 days of hospital admission  
 
 
-```{r}
+```{r eval=F}
 data <- icu_stays %>%
   distinct(subject_id, .keep_all=T) %>%
   left_join(patients, by="subject_id") %>%
