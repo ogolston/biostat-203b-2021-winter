@@ -43,12 +43,17 @@ At this moment, you should already get credentialed on the PhysioNet. Please inc
 
 ![Screenshot of data use agreement](agreement.png)
 
+
+
 ## Q2. `read.csv` (base R) vs `read_csv` (tidyverse) vs `fread` (data.table)
 
 There are quite a few utilities in R for reading data files. Let us test the speed of reading a moderate sized compressed csv file, `admissions.csv.gz`, by three programs: `read.csv` in base R, `read_csv` in tidyverse, and `fread` in the popular data.table package. Is there any speed difference?
 
 In this homework, we stick to the tidyverse. 
 
+### Solution
+
+The code below records the time required to read in `admissions.csv.gz`. 
 ```{r message=F}
 file_path <- str_c(mimic_path, "/core/admissions.csv.gz")
 
@@ -58,12 +63,15 @@ time3 <- system.time(file3 <- fread(file_path))
 
 ```
 
+A comparison of elapsed times are displayed in the table.
 
-Function | Execution Time
+Function | Time Elapsed for Execution
 -------- | -------------
 read.csv | `r time1[3]` 
 read_csv | `r time2[3]`
 fread    | `r time3[3]`
+
+`read.csv` seems to be the slowest, by far. `read_csv` and `fread` are similar, but `fread` tends to be a slight bit faster.
 
 
 ## Q3. ICU stays
