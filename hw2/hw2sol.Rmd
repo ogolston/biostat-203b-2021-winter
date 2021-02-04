@@ -85,8 +85,8 @@ fread    | `r time3[3]`
 - last ICU unit  
 
 ### Solution
-Read in `icustays` data.
 
+First, read in `icustays` data and view the first 10 observations. 
 ```{r}
 icu_stays <- read_csv(str_c(mimic_path, "/icu/icustays.csv.gz")) 
 
@@ -94,74 +94,76 @@ icu_stays %>%
   print()
 ``` 
 
-Check number of unique `stay_id` values
+Check number of unique `stay_id` values:
 ```{r}
-icu_stays %>%
+icu_stays %>% 
   distinct(stay_id) %>%
   nrow()
-
 ```
+There are 69619 unique `stay_id` values. This is equal to the number of observations in the original dataset, as each observation has been assigned a unique `stay_id` value.  
 
 
-Check number of unique `subject_id` values
+Check number of unique `subject_id` values:
 ```{r}
 icu_stays %>%
   distinct(subject_id) %>%
   nrow()
-```
 
-Visualize length of stay
+```
+There are 50048 unique `subject_id` values. This is less than the total number of observations, which means that some individuals have had multiple ICU stays, and are thus present two or more times. 
+
+```{r}
+icu_stays %>%
+  count(subject_id) %>%
+  arrange(desc(n)) 
+```
+One patient has had 33 ICU stays!
+
+
+Visualize length of stay. In the initially plot, it appeared that the mass of observations had short stays (less than 30 days), but there were a few extreme outlying values. 
+```{r}
+icu_stays %>%
+  filter(los >= 50) %>%
+  arrange(desc(los)) %>%
+  select(los)
+```
+Out of over 69,000 observations, only 112 had stays of 50 days or longer, and only 11 had stays of 100 days or longer. 
+
+To make the graph more interpretable, these outlying values are exluded. 
 ```{r}
 icu_stays %>%
   ggplot(aes(x=los)) +
-    geom_histogram(binwidth=.5) +
-    coord_cartesian(xlim=c(0,50)) +
-    labs(title = "Length of Stay", x = "Length of Stay (days)")
+  geom_histogram(binwidth=.5) +
+  coord_cartesian(xlim=c(0,50)) +
+  labs(title = "Length of Stay", x = "Length of Stay (days)")
 ```
-
-```{r}
-icu_stays %>%
-  ggplot(aes(x=factor(1), y=los)) +
-    geom_boxplot()
-```
+It appears that most people stay in the ICU for less than 5 days, and very few stay beyond 10. 
 
 
-
-first_careunit
+`first_careunit`
 ```{r}
 icu_stays %>%
   ggplot(aes(x=first_careunit)) +
-    geom_bar() +
-    coord_flip() +
-    labs(x = "First Care Unit")
+  geom_bar() +
+  coord_flip() +
+  labs(x = "First Care Unit", title = "First Care Unit during ICU Stay")
 ```
 
 
+`last_careunit`
 ```{r}
 icu_stays %>%
   ggplot(aes(x=last_careunit)) +
-    geom_bar() +
-    coord_flip() +
-    labs(x = "Last Care Unit")
+  geom_bar() +
+  coord_flip() +
+  labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay")
 ```
 
 
 
-```{r}
-icu_stays %>%
-  ggplot(aes(x=factor(1), fill=first_careunit)) +
-    geom_bar(width=1) +
-    coord_polar("y") +
-    labs(x = "First Care Unit")
-```
 
-```{r}
-icu_stays %>%
-  ggplot(aes(x=factor(1), fill=last_careunit)) +
-    geom_bar(width=1) +
-    coord_polar("y") +
-    labs(x = "Last Care Unit")
-```
+
+
 
 
 ## Q4. `admission` data
