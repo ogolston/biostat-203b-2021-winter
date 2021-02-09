@@ -1,6 +1,6 @@
 ---
 title: "Biostat 203B Homework 2"
-subtitle: Due Feb 5 @ 11:59PM
+subtitle: Due Feb 10 @ 11:59PM
 author: Olivia Golston
 output: 
   html_document:
@@ -158,8 +158,6 @@ icu_stays %>%
   coord_flip() +
   labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay")
 ```
-
-
 
 
 
@@ -417,30 +415,10 @@ We are interested in the vitals for ICU patients: heart rate, mean and systolic 
 
 `chartevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `itemid` variable indicates a single measurement type in the database. The `value` variable is the value measured for `itemid`.
 
-```{r eval=F}
-if(!file.exists("chartevents_icustays.csv.gz")) {
-  labs <- fread(str_c(mimic_path, "/icu/chartevents.csv.gz"),
-                select = c("subject_id", "hadm_id", "stay_id", "itemid", 
-                           "charttime", "value", "valuenum"),
-                  nThread=4)
- labs %>% 
-   semi_join(icu_stays, by = c("subject_id", "hadm_id")) %>%
-   fwrite("chartevents_icustays.csv.gz", nThread = 4)
-}
-
-chart_events <- fread("chartevents_icustays.csv.gz", nThread = 1)
-
-```
-
 
 `d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `itemid` in `chartevents.csv.gz`. 
 
-
-
-```{r eval=F}
-chart_events <- read_csv(str_c(mimic_path, "/icu/chartevents.csv.gz")) %>% 
-  print()
-```
+### Solution
 
 ```{r}
 chart_key <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
