@@ -429,6 +429,25 @@ chart_key %>%
 ```
 
 
+```{r}
+temp_path <- "/usr/203b-data/mimic-iv-derived-data"
+
+chartevents_tble <- fread(str_c(temp_path, "/chartevents_filtered_itemid.csv.gz"),
+                          header = FALSE,
+                          col.names = c("subject_id",
+                                       "hadm_id",
+                                       "stay_id",
+                                       "charttime",
+                                       "itemid",
+                                       "valuenum"),
+                          nThread = 4) %>%
+  as_tibble() %>%
+  mutate_at(c("subject_id", "hadm_id", "stay_id", "itemid"), as.numeric) %>%
+  mutate(charttime = ymd_hms(charttime)) %>%
+  print(width = Inf)
+
+```
+
 ## Q8. Putting things together
 
 Let us create a tibble for all ICU stays, where rows are  
