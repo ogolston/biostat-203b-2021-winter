@@ -376,22 +376,29 @@ There is a huge spike at 0, and then no observations until ~age 18. Thus, my bes
 
 We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
 
-```{r eval=F}
-if(!file.exists("labevents_icustays.csv.gz")) {
-  labs <- fread(str_c(mimic_path, "/hosp/labevents.csv.gz"),
-                select = c("subject_id", "hadm_id", "itemid", 
-                           "charttime", "valuenum"),
-                  nThread=4)
- labs %>% 
-   semi_join(icu_stays, by = c("subject_id", "hadm_id")) %>%
-   fwrite("labevents_icustays.csv.gz", nThread = 4)
-}
 
-labs <- fread("labevents_icustays.csv.gz", nThread = 1)
+```{r}
+temp_path <- "/usr/203b-data/mimic-iv-derived-data"
 
+if(!file.exists("labevents_filtered.csv.gz")) {
+    labevents_tble <- fread(str_c(temp_path, "/labevents_filtered_itemid.csv.gz"),
+                          header = FALSE,
+                          col.names = c("subject_id", 
+                                        "hadm_id",
+                                        "itemid", 
+                                        "charttime", 
+                                        "valuenum"),
+                          nThread = 4) %>%
+    as_tibble() %>%
+    mutate_at(c("subject_id", "hadm_id", "itemid"), as.numeric) %>%
+    mutate(charttime = ymd_hms(charttime)) 
+    
+    labevents_tble %>%
+      fwrite("labevents_filtered.csv.gz", nThread = 4)
+} 
+
+labs <- fread("labevents_filtered.csv.gz", nThread = 1)
 ```
-
-
 
 ```{r}
 labcodes <- read_csv(str_c(mimic_path, "/hosp/d_labitems.csv.gz")) %>%
@@ -432,7 +439,8 @@ chart_key %>%
 ```{r}
 temp_path <- "/usr/203b-data/mimic-iv-derived-data"
 
-chartevents_tble <- fread(str_c(temp_path, "/chartevents_filtered_itemid.csv.gz"),
+if(!file.exists("chartevents_filtered.csv.gz")) {
+    chartevents_tble <- fread(str_c(temp_path, "/chartevents_filtered_itemid.csv.gz"),
                           header = FALSE,
                           col.names = c("subject_id",
                                        "hadm_id",
@@ -441,11 +449,20 @@ chartevents_tble <- fread(str_c(temp_path, "/chartevents_filtered_itemid.csv.gz"
                                        "itemid",
                                        "valuenum"),
                           nThread = 4) %>%
-  as_tibble() %>%
-  mutate_at(c("subject_id", "hadm_id", "stay_id", "itemid"), as.numeric) %>%
-  mutate(charttime = ymd_hms(charttime)) %>%
-  print(width = Inf)
+    as_tibble() %>%
+    mutate_at(c("subject_id", "hadm_id", "stay_id", "itemid"), as.numeric) %>%
+    mutate(charttime = ymd_hms(charttime)) %>%
+    print(width = Inf)
+    
+    chartevents_tble %>%
+      fwrite("chartevents_filtered.csv.gz", nThread = 4)
+    
+} 
 
+chart <- fread("chartevents_filtered.csv.gz", nThread = 1)
+
+chart %>% 
+  print(width = Inf)
 ```
 
 ## Q8. Putting things together
