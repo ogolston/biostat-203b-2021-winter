@@ -132,9 +132,9 @@ Out of over 69,000 observations, only 112 had stays of 50 days or longer, and on
 To make the graph more interpretable, these outlying values are exluded. 
 ```{r}
 icu_stays %>%
-  ggplot(aes(x=los)) +
-  geom_histogram(binwidth=.5) +
-  coord_cartesian(xlim=c(0,50)) +
+  ggplot(aes(x = los)) +
+  geom_histogram(binwidth = .5) +
+  coord_cartesian(xlim = c(0,50)) +
   labs(title = "Length of Stay", x = "Length of Stay (days)")
 ```
 It appears that most people stay in the ICU for less than 5 days, and very few stay beyond 10. 
@@ -143,7 +143,7 @@ It appears that most people stay in the ICU for less than 5 days, and very few s
 `first_careunit`
 ```{r}
 icu_stays %>%
-  ggplot(aes(x=first_careunit)) +
+  ggplot(aes(x = first_careunit)) +
   geom_bar() +
   coord_flip() +
   labs(x = "First Care Unit", title = "First Care Unit during ICU Stay")
@@ -153,7 +153,7 @@ icu_stays %>%
 `last_careunit`
 ```{r}
 icu_stays %>%
-  ggplot(aes(x=last_careunit)) +
+  ggplot(aes(x = last_careunit)) +
   geom_bar() +
   coord_flip() +
   labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay")
@@ -207,15 +207,15 @@ admissions_unique %>%
 
 - admission year  
 ```{r}
-ggplot(data=admissions) +
+ggplot(data = admissions) +
   geom_bar(aes(year(admittime)))
 ```
 
 
 - admission month  
 ```{r}
-ggplot(data=admissions) +
-  geom_bar(aes(month(admittime, label=T))) +
+ggplot(data = admissions) +
+  geom_bar(aes(month(admittime, label = T))) +
   labs(title = "Admissions by Month", x = "Month")
 ```
 
@@ -223,7 +223,7 @@ ggplot(data=admissions) +
 
 - admission month day 
 ```{r}
-ggplot(data=admissions) +
+ggplot(data = admissions) +
   geom_bar(aes(day(admittime))) +
   labs(title = "Admissions by Day of Month", x = "Day of Month")
 ```
@@ -231,16 +231,16 @@ ggplot(data=admissions) +
 
 - admission week day  
 ```{r}
-ggplot(data=admissions) +
-  geom_bar(aes(wday(admittime, label=T))) +
-  labs(title="Admissions by Day of Week", x="Day of Week")
+ggplot(data = admissions) +
+  geom_bar(aes(wday(admittime, label = T))) +
+  labs(title = "Admissions by Day of Week", x = "Day of Week")
 ```
 
 - admission hour (anything unusual?)  
 ```{r}
-ggplot(data=admissions) +
+ggplot(data = admissions) +
   geom_bar(aes(hour(admittime))) +
-  labs(title="Admissions by Hour", x="Hour")
+  labs(title = "Admissions by Hour", x = "Hour")
 ```
 
 - number of deaths in each year  
@@ -341,20 +341,18 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 - `gender`  
 - `anchor_age` (explain pattern you see)
 
-
-
 ```{r}
 patients <- read_csv(str_c(mimic_path, "/core/patients.csv.gz")) 
 
 
 patients %>%
-  print()
+  print(width = Inf)
 ```
 
 
 ```{r}
 patients %>%
-  ggplot(aes(x=factor(1), fill = gender)) +
+  ggplot(aes(x = factor(1), fill = gender)) +
     geom_bar(width=1) +
     coord_polar("y") +
     labs(x = "Gender")
@@ -377,7 +375,7 @@ There is a huge spike at 0, and then no observations until ~age 18. Thus, my bes
 We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
 
 
-```{r}
+```{r eval = F}
 temp_path <- "/usr/203b-data/mimic-iv-derived-data"
 
 if(!file.exists("labevents_filtered.csv.gz")) {
@@ -402,7 +400,7 @@ labs <- fread("labevents_filtered.csv.gz", nThread = 1)
 
 ```{r}
 labcodes <- read_csv(str_c(mimic_path, "/hosp/d_labitems.csv.gz")) %>%
-  print(width=Inf) 
+  print(width = Inf) 
 ```
 
 ```{r eval=F}
@@ -436,7 +434,7 @@ chart_key %>%
 ```
 
 
-```{r}
+```{r eval=F}
 temp_path <- "/usr/203b-data/mimic-iv-derived-data"
 
 if(!file.exists("chartevents_filtered.csv.gz")) {
@@ -484,10 +482,10 @@ and columns contain at least following variables
 
 ```{r eval=F}
 data <- icu_stays %>%
-  distinct(subject_id, .keep_all=T) %>%
-  left_join(patients, by="subject_id") %>%
+  distinct(subject_id, .keep_all = T) %>%
+  left_join(patients, by = "subject_id") %>%
   filter(anchor_age >= 18) %>%
-  left_join(admissions, by=c("hadm_id", "subject_id")) %>% 
+  left_join(admissions, by = c("hadm_id", "subject_id")) %>% 
   print()
 
 ```
