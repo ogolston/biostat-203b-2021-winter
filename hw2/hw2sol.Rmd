@@ -436,7 +436,7 @@ labs <- labs %>%
 
 #### Reading in the filtered file
 
-Dr. Zhou conducted the above steps to create the filtered data file. This was read in and saved using the following code. `charttime` was saved as a date variable. 
+Dr. Zhou conducted the above steps to create the filtered data file. Additionally, he used `select` to keep only the needed columns. The resulting dataset was read in and saved using the following code. `charttime` was saved as a date variable, since `fread` was parsing it as a character. 
 ```{r eval = F}
 derived_data_path <- "/usr/203b-data/mimic-iv-derived-data"
 
@@ -498,23 +498,20 @@ chart_codes <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
   print(width = Inf) 
 ```
 
-Search for key terms in the `label` column to find the lab measurement of interest. For example, to search for heart rate and get a vector of associated `itemid` values: 
+Search for key terms in the `label` column to find the lab measurement of interest. For example, to search for heart rate, view the corresponding chart items, and get a vector of `itemid` values: 
 ```{r}
-heart_rate_ids <- chart_codes %>%
-  filter(str_detect(label, regex("heart rate", ignore_case = T)))  %>%
-  .$itemid %>% 
-  print()
+measurements <- c("heart rate", "blood pressure mean", "systolic", 
+                  "temperature", "SpO2", "respiratory rate")
+
+for (item in measurements) {
+  chart_codes %>%
+    filter(str_detect(label, regex(item, ignore_case = T))) %>%
+    print()
+}
+
 ```
-Finally, assuming the `chartevents` file has been read into tibble `chart_events`, the most frequently occuring heart rate associated `itemid` can be found and saved.
-```{r eval = F}
-top_heart_rate_id <- chart_events %>%
-  filter(itemid %in% heart_rate_ids) %>%
-  count(itemid) %>%
-  arrange(desc(n)) %>%
-  slice(1) %>%
-  .$itemid %>%
-  print()
-```
+We can inspect the output and choose which measurement seems the most reasonable to keep  However, if there is any doubt about which `itemid` to use, we use a similar process to what was done in Q6. 
+
 
 Once this process has been repeated for all measurements of interest, and desired `itemid` values have been saved into vector `top_ids`, the `chart_events` data can be filtered to contain only the subset of desired measurements.
 
@@ -527,7 +524,7 @@ chart_events <- chart_events %>%
 
 #### Reading in the filtered file
 
-Dr. Zhou did the steps outlined above and provided the pre-filtered file `chartevents_filtered.csv.gz`. This was read in and saved. 
+Dr. Zhou did the steps outlined above and selected only the necessary columns in order to reduce the file size. This pre-filtered file, `chartevents_filtered.csv.gz`, was read in and saved. 
 ```{r eval=F}
 if(!file.exists("chartevents_filtered.csv.gz")) {
     chartevents_tble <- fread(str_c(derived_data_path, 
@@ -568,6 +565,9 @@ and columns contain at least following variables
 - first lab measurements during ICU stay  
 - first vitals measurement during ICU stay  
 - an indicator variable whether the patient died within 30 days of hospital admission  
+
+
+### Solution
 
 
 ```{r eval=F}
