@@ -129,7 +129,7 @@ icu_stays %>%
 ```
 Out of over 69,000 observations, only 112 had stays of 50 days or longer, and only 11 had stays of 100 days or longer. 
 
-To make the graph more interpretable, these outlying values are exluded. 
+To make the graph more interpretable, these outlying values are excluded. 
 ```{r}
 icu_stays %>%
   ggplot(aes(x = los)) +
@@ -386,8 +386,57 @@ The file has 122,289,829 lines. Trying to read this in caused RStudio to crash. 
 zcat /usr/203b-data/mimic-iv-derived-data/labevents_filtered_itemid.csv.gz | 
   wc -l
 ```
-This filtered file has 30,773,355 lines.
+This filtered file has 30,773,355 lines and contains only the variables of interest.
 
+
+
+## The Process I would have used
+Due to the technical issues described above, it was not possible to complete the problem as originally assigned. However, below is the code that could have been used to find the `itemids` for the lab measurements of interest, and to filter the dataset to contain only those measurements. 
+
+First, load the dictionary file, which has information about the various lab measurements:
+```{r}
+labcodes <- read_csv(str_c(mimic_path, "/hosp/d_labitems.csv.gz")) %>%
+  print(width = Inf) 
+```
+
+Search for key terms in the `label` column to find the lab measurement of interest. For example, creatinine: 
+```{r}
+creatinine_items <- labcodes %>%
+  filter(str_detect(label, "Creatinine")) %>%
+  print()
+``` 
+Since there are so many creatinine related measurements, it may make sense to filter this list further, especially to make our final dataset more manageable. First we create a vector of all `itemid` values associated with creatinine.
+
+```{r}
+creatinine_ids <- creatinine_items %>%
+  .$itemid %>% 
+  print()
+```
+
+Assuming the `labevents` file had been successfully read into a tibble called `labs`, we can now see which creatinine `itemid` appers most frequently. The following code filters to only the lab events related to creatinine, counts the times each `itemid` appears, orders from highest to lowest count, and then saves and prints the top occuring `itemid`. For creatinine, this is 50912.
+```{r eval = F}
+top_creatinine_id <- labs %>%
+  filter(itemid %in% creatinine_ids) %>%
+  count(itemid) %>%
+  arrange(desc(n)) %>%
+  slice(1) %>%
+  .$itemid %>%
+  print()
+```
+
+This process could be repeated for the other requested lab items. Dr. Zhou provided the `itemids` for the all measurements. Finally, the labs file can be filtered down to only these measurements of interest.
+```{r eval=F}
+labs <- labs %>%
+  filter(itemid %in% c("50912", "50971", "50983", "50902", "50882", "51221", 
+                      "51301", "50931", "50960", "50893", "50813")) %>%
+  print()
+
+```
+
+
+## Reading in the filtered file
+
+Dr. Zhou conducted the above steps to create the filtered data file. This was read in and saved using the following code.
 ```{r eval = F}
 temp_path <- "/usr/203b-data/mimic-iv-derived-data"
 
@@ -410,21 +459,6 @@ if(!file.exists("labevents_filtered.csv.gz")) {
 
 labs <- fread("labevents_filtered.csv.gz", nThread = 1)
 ```
-
-```{r}
-labcodes <- read_csv(str_c(mimic_path, "/hosp/d_labitems.csv.gz")) %>%
-  print(width = Inf) 
-```
-
-```{r eval=F}
-labs <- labs %>%
-  filter(itemid %in% c("50912", "50971", "50983", "50902", "50882", "51221", 
-                      "51301", "50931", "50960", "50893", "50813")) %>%
-  print()
-
-```
-
-
 
 
 ## Q7. Vitals from chartered events
@@ -450,6 +484,7 @@ zcat /usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz |
   wc -l
 ```
 The filtered file has 30,095,996 lines and is easier to work with.
+
 
 
 ```{r}
