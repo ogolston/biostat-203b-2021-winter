@@ -436,7 +436,9 @@ labs <- labs %>%
 
 #### Reading in the filtered file
 
-Dr. Zhou conducted the above steps to create the filtered data file. Additionally, he used `select` to keep only the needed columns. The resulting dataset was read in and saved using the following code. `charttime` was saved as a date variable, since `fread` was parsing it as a character. 
+Dr. Zhou conducted the above steps to obtain the list of `itemid` values of interest. Then, using `awk` in bash, he filtered only rows with the `itemid` values of interest, and kept only the variables of interest. 
+
+The resulting dataset was read in and saved using the following code. `charttime` was saved as a date variable, since `fread` was parsing it as a character. 
 ```{r eval = F}
 derived_data_path <- "/usr/203b-data/mimic-iv-derived-data"
 
@@ -458,10 +460,12 @@ if(!file.exists("labevents_filtered.csv.gz")) {
       fwrite("labevents_filtered.csv.gz", nThread = 4)
 } 
 
-labs <- fread("labevents_filtered.csv.gz", nThread = 1)
 ```
 
-
+Can uncomment the below code to read in the data.
+```{r eval = F}
+#labs <- fread("labevents_filtered.csv.gz", nThread = 1)
+```
 ## Q7. Vitals from chartered events
 
 We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate. Find the `itemid`s of these vitals from `d_items.csv.gz` and retrieve a subset of `chartevents.csv.gz` only containing these items.
@@ -524,8 +528,8 @@ chart_events <- chart_events %>%
 
 #### Reading in the filtered file
 
-Dr. Zhou did the steps outlined above and selected only the necessary columns in order to reduce the file size. This pre-filtered file, `chartevents_filtered.csv.gz`, was read in and saved. 
-```{r eval=F}
+As with the `labevents` data, Dr. Zhou did the steps outlined above but used `awk` to select only the necessary columns and rows of the `chartevents` data. This pre-filtered file, `chartevents_filtered.csv.gz`, was read in and saved. 
+```{r eval = F}
 if(!file.exists("chartevents_filtered.csv.gz")) {
     chartevents_tble <- fread(str_c(derived_data_path, 
                                     "/chartevents_filtered_itemid.csv.gz"),
@@ -546,8 +550,11 @@ if(!file.exists("chartevents_filtered.csv.gz")) {
       fwrite("chartevents_filtered.csv.gz", nThread = 4)
     
 } 
+```
 
-chart <- fread("chartevents_filtered.csv.gz", nThread = 1)
+Can uncomment the below code to read this in.
+```{r eval = F}
+#chart_events <- fread("chartevents_filtered.csv.gz", nThread = 1)
 ```
 
 ## Q8. Putting things together
@@ -569,16 +576,106 @@ and columns contain at least following variables
 
 ### Solution
 
+The "base" data for this problem is the ICU data, which I stored in the data frame `icu_stays` in Question 3. The first goal is to keep only the first ICU stay for each patient, which can be done by grouping by `subject_id` and then keeping only the first chronological stay. 
+```{r}
+full_icu_tibble <- icu_stays %>%
+  group_by(subject_id) %>%
+  filter(rank(intime) == 1) %>%
+  ungroup()
+```
 
-```{r eval=F}
-data <- icu_stays %>%
-  distinct(subject_id, .keep_all = T) %>%
-  left_join(patients, by = "subject_id") %>%
-  filter(anchor_age >= 18) %>%
+Next, we join to the `admissions` (created in Q4) and `patients` (from Q5): The ICU stay can be joined to `admissions` by `hadm_id` (we also use `subject_id`, but it's not strictly necessary), and can be joined to `patients` by `subject_id`.
+```{r}
+full_icu_tibble <- full_icu_tibble %>%
   left_join(admissions, by = c("hadm_id", "subject_id")) %>% 
+  left_join(patients, by = c("subject_id")) %>%
   print()
+```
 
+Now, we want to keep only adults. Since the only age recorded is the age during the "anchor year", we need to calculate what the age at time of the admission was.  We do this by finding how many years have passed since the `anchor_year` and adding those to the `anchor_age`. Then, we filter such that only adults (> 18) are kept. 
+```{r}
+full_icu_tibble <- full_icu_tibble %>%
+  mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %>%
+  filter(age_at_adm > 18) %>% 
+  print()
+```
+There are 49,971 unique adults with ICU stays.
+
+
+
+Now, we want to merge lab results to this table. However, we only want to keep the first lab result of each type, during the ICU stay.
+
+The filtered `labevents` file is still huge, so now is a convenient time to save a version that keeps only observations that will be used for this final step.
+```{r}
+if(!file.exists("labevents_filtered_icustays.csv.gz")) {
+  labs %>%
+    semi_join(full_icu_tibble, by = c("subject_id", "hadm_id")) %>%
+    fwrite("labevents_filtered_icustays.csv.gz", nThread = 4)
+}
 ```
 
 
+```{r}
+labs <- fread("labevents_filtered_icustays.csv.gz", nThread = 1)
+```
 
+
+```{r}
+full_icu_labs <- labs %>%
+  semi_join(full_icu_tibble, by = c("subject_id", "hadm_id")) %>%
+  left_join(select(full_icu_tibble, subject_id, hadm_id, intime), 
+                   by = c("subject_id", "hadm_id")) %>%
+  filter(charttime >= intime) %>%
+  group_by(subject_id, itemid) %>%
+  arrange(charttime, .by_group = TRUE) %>%   #sort within each group 
+  slice_head(n = 1) %>%   
+  select(-charttime, -intime) %>%
+  spread(key = itemid, value = valuenum) %>%
+  right_join(full_icu_tibble, by = c("subject_id", "hadm_id")) %>%
+  ungroup() %>%
+  #rename_at(vars(as.character(labcodes$itemid)), ~labcodes$label) %>%
+  print()
+```
+
+We'll follow a similar pattern for chart events. First, it's convenient to save a version with only adults in the ICU data.
+```{r}
+if(!file.exists("chartevents_filtered_icustays.csv.gz")) {
+  chart_events %>%
+    semi_join(full_icu_tibble, by = c("subject_id", "hadm_id")) %>%
+    fwrite("chartevents_filtered_icustays.csv.gz", nThread = 4)
+}
+```
+
+```{r}
+chart_events <- fread("chartevents_filtered_icustays.csv.gz", nThread = 1)
+```
+
+Now, we repeat the same process as above. Notice that we now have two tibbles: `full_icu_labs` and `full_icu_chart`.  Also, rather than `hadm_id`, `stay_id` is the unique identifier for the chart events. 
+```{r}
+full_icu_chart <- chart_events %>%
+  semi_join(full_icu_tibble, by = c("subject_id", "stay_id")) %>%
+  left_join(select(full_icu_tibble, subject_id, stay_id, intime), 
+                   by = c("subject_id", "stay_id")) %>%
+  filter(charttime >= intime) %>%
+  group_by(subject_id, itemid) %>%
+  arrange(charttime, .by_group = TRUE) %>%   #sort within each group 
+  slice_head(n = 1) %>%   
+  select(-charttime, -intime) %>%
+  spread(key = itemid, value = valuenum) %>%
+  right_join(full_icu_tibble, by = c("subject_id", "hadm_id")) %>%
+  ungroup() %>%
+  #rename_at(vars(as.character(labcodes$itemid)), ~labcodes$label) %>%
+  print()
+```
+
+Let join by all matching variables in the data, since they should match between the two datasets.
+```{r} 
+final_icu_data <- full_icu_labs %>%
+  left_join(full_icu_chart) %>% 
+  print(width = Inf)
+```
+
+
+## TODO 
+Finish up by doing the indicator variable for death
+And changing the names of columns 
