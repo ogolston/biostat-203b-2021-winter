@@ -393,9 +393,17 @@ summary {
 <li><a href="#solution-3">Solution</a></li>
 </ul></li>
 <li><a href="#q5.-patient-data">Q5. <code>patient</code> data</a></li>
-<li><a href="#q6.-lab-results">Q6. Lab results</a></li>
+<li><a href="#q6.-lab-results">Q6. Lab results</a><ul>
+<li><a href="#solution-4">Solution</a><ul>
+<li><a href="#the-process-i-would-have-used">The Process I would have used</a></li>
+<li><a href="#reading-in-the-filtered-file">Reading in the filtered file</a></li>
+</ul></li>
+</ul></li>
 <li><a href="#q7.-vitals-from-chartered-events">Q7. Vitals from chartered events</a><ul>
-<li><a href="#solution-4">Solution</a></li>
+<li><a href="#solution-5">Solution</a><ul>
+<li><a href="#the-process-i-would-have-used-1">The Process I would have used</a></li>
+<li><a href="#reading-in-the-filtered-file-1">Reading in the filtered file</a></li>
+</ul></li>
 </ul></li>
 <li><a href="#q8.-putting-things-together">Q8. Putting things together</a></li>
 </ul>
@@ -643,7 +651,7 @@ time3 &lt;- system.time(file3 &lt;- fread(file_path))</code></pre>
 ## 10  103.
 ## # … with 102 more rows</code></pre>
 <p>Out of over 69,000 observations, only 112 had stays of 50 days or longer, and only 11 had stays of 100 days or longer.</p>
-<p>To make the graph more interpretable, these outlying values are exluded.</p>
+<p>To make the graph more interpretable, these outlying values are excluded.</p>
 <pre class="r"><code>icu_stays %&gt;%
   ggplot(aes(x = los)) +
   geom_histogram(binwidth = .5) +
@@ -939,26 +947,18 @@ admissions_unique %&gt;%
 <h2>Q6. Lab results</h2>
 <p><code>labevents.csv.gz</code> (<a href="https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/" class="uri">https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/</a>) contains all laboratory measurements for patients.</p>
 <p>We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the <code>itemid</code>s of these lab measurements from <code>d_labitems.csv.gz</code> and retrieve a subset of <code>labevents.csv.gz</code> only containing these items.</p>
-<pre class="r"><code>temp_path &lt;- &quot;/usr/203b-data/mimic-iv-derived-data&quot;
-
-if(!file.exists(&quot;labevents_filtered.csv.gz&quot;)) {
-    labevents_tble &lt;- fread(str_c(temp_path, &quot;/labevents_filtered_itemid.csv.gz&quot;),
-                          header = FALSE,
-                          col.names = c(&quot;subject_id&quot;, 
-                                        &quot;hadm_id&quot;,
-                                        &quot;itemid&quot;, 
-                                        &quot;charttime&quot;, 
-                                        &quot;valuenum&quot;),
-                          nThread = 4) %&gt;%
-    as_tibble() %&gt;%
-    mutate_at(c(&quot;subject_id&quot;, &quot;hadm_id&quot;, &quot;itemid&quot;), as.numeric) %&gt;%
-    mutate(charttime = ymd_hms(charttime)) 
-    
-    labevents_tble %&gt;%
-      fwrite(&quot;labevents_filtered.csv.gz&quot;, nThread = 4)
-} 
-
-labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre>
+<div id="solution-4" class="section level3">
+<h3>Solution</h3>
+<p>This question was tricky, since the <code>labevents.csv.gz</code> file is so large.</p>
+<pre class="bash"><code>zcat /usr/203b-data/mimic-iv/hosp/labevents.csv.gz | wc -l</code></pre>
+<p>The file has 122,289,829 lines. Trying to read this in caused RStudio to crash. Thus, a filtered version of the file was created by Dr. Zhou.</p>
+<pre class="bash"><code>zcat /usr/203b-data/mimic-iv-derived-data/labevents_filtered_itemid.csv.gz | 
+  wc -l</code></pre>
+<p>This filtered file has 30,773,355 lines and contains only the variables of interest.</p>
+<div id="the-process-i-would-have-used" class="section level4">
+<h4>The Process I would have used</h4>
+<p>Due to the technical issues described above, it was not possible to complete the problem as originally assigned. However, below is the code that could have been used to find the <code>itemids</code> for the lab measurements of interest, and to filter the dataset to contain only those measurements.</p>
+<p>First, load the dictionary file, which has information about the various lab measurements:</p>
 <pre class="r"><code>labcodes &lt;- read_csv(str_c(mimic_path, &quot;/hosp/d_labitems.csv.gz&quot;)) %&gt;%
   print(width = Inf) </code></pre>
 <pre><code>## 
@@ -984,20 +984,99 @@ labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre
 ##  9  50853 25-OH Vitamin D           Blood            Chemistry  &lt;NA&gt;      
 ## 10  51533 3t                        Blood            Chemistry  &lt;NA&gt;      
 ## # … with 1,615 more rows</code></pre>
+<p>Search for key terms in the <code>label</code> column to find the lab measurement of interest. For example, creatinine:</p>
+<pre class="r"><code>creatinine_items &lt;- labcodes %&gt;%
+  filter(str_detect(label, regex(&quot;Creatinine&quot;, ignore_case = TRUE))) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 20 x 5
+##    itemid label                          fluid               category loinc_code
+##     &lt;dbl&gt; &lt;chr&gt;                          &lt;chr&gt;               &lt;chr&gt;    &lt;chr&gt;     
+##  1  51067 24 hr Creatinine               Urine               Chemist… &lt;NA&gt;      
+##  2  51070 Albumin/Creatinine, Urine      Urine               Chemist… 14958-3   
+##  3  51958 Amylase/Creatinine Clearance   Urine               Chemist… &lt;NA&gt;      
+##  4  51073 Amylase/Creatinine Ratio, Uri… Urine               Chemist… &lt;NA&gt;      
+##  5  50912 Creatinine                     Blood               Chemist… 2160-0    
+##  6  52541 Creatinine                     Blood               Chemist… &lt;NA&gt;      
+##  7  50841 Creatinine, Ascites            Ascites             Chemist… &lt;NA&gt;      
+##  8  51972 Creatinine, Blood              Urine               Chemist… &lt;NA&gt;      
+##  9  51032 Creatinine, Body Fluid         Other Body Fluid    Chemist… &lt;NA&gt;      
+## 10  51080 Creatinine Clearance           Urine               Chemist… &lt;NA&gt;      
+## 11  51785 Creatinine, CSF                Cerebrospinal Fluid Chemist… &lt;NA&gt;      
+## 12  51021 Creatinine, Joint Fluid        Joint Fluid         Chemist… &lt;NA&gt;      
+## 13  51052 Creatinine, Pleural            Pleural             Chemist… &lt;NA&gt;      
+## 14  51081 Creatinine, Serum              Urine               Chemist… &lt;NA&gt;      
+## 15  51932 Creatinine, Stool              Stool               Chemist… &lt;NA&gt;      
+## 16  51082 Creatinine, Urine              Urine               Chemist… 2161-8    
+## 17  52019 Creatinine, Whole Blood        Blood               Blood G… &lt;NA&gt;      
+## 18  51099 Protein/Creatinine Ratio       Urine               Chemist… 2890-2    
+## 19  51995 Urine  Creatinine              Urine               Chemist… &lt;NA&gt;      
+## 20  51106 Urine Creatinine               Urine               Chemist… &lt;NA&gt;</code></pre>
+<p>Since there are so many creatinine related measurements, it may make sense to filter this list further, especially to make our final dataset more manageable. First we create a vector of all <code>itemid</code> values associated with creatinine.</p>
+<pre class="r"><code>creatinine_ids &lt;- creatinine_items %&gt;%
+  .$itemid %&gt;% 
+  print()</code></pre>
+<pre><code>##  [1] 51067 51070 51958 51073 50912 52541 50841 51972 51032 51080 51785 51021
+## [13] 51052 51081 51932 51082 52019 51099 51995 51106</code></pre>
+<p>Assuming the <code>labevents</code> file had been successfully read into a tibble called <code>labs</code>, we can now see which creatinine <code>itemid</code> appers most frequently. The following code filters to only the lab events related to creatinine, counts the times each <code>itemid</code> appears, orders from highest to lowest count, and then saves and prints the top occuring <code>itemid</code>. For creatinine, this is 50912.</p>
+<pre class="r"><code>top_creatinine_id &lt;- labs %&gt;%
+  filter(itemid %in% creatinine_ids) %&gt;%
+  count(itemid) %&gt;%
+  arrange(desc(n)) %&gt;%
+  slice(1) %&gt;%
+  .$itemid %&gt;%
+  print()</code></pre>
+<p>This process could be repeated for the other requested lab items. Dr. Zhou provided the <code>itemids</code> for the all measurements. Finally, the labs file can be filtered down to only these measurements of interest.</p>
 <pre class="r"><code>labs &lt;- labs %&gt;%
   filter(itemid %in% c(&quot;50912&quot;, &quot;50971&quot;, &quot;50983&quot;, &quot;50902&quot;, &quot;50882&quot;, &quot;51221&quot;, 
                       &quot;51301&quot;, &quot;50931&quot;, &quot;50960&quot;, &quot;50893&quot;, &quot;50813&quot;)) %&gt;%
   print()</code></pre>
+</div>
+<div id="reading-in-the-filtered-file" class="section level4">
+<h4>Reading in the filtered file</h4>
+<p>Dr. Zhou conducted the above steps to create the filtered data file. This was read in and saved using the following code. <code>charttime</code> was saved as a date variable.</p>
+<pre class="r"><code>derived_data_path &lt;- &quot;/usr/203b-data/mimic-iv-derived-data&quot;
+
+if(!file.exists(&quot;labevents_filtered.csv.gz&quot;)) {
+    labevents_tble &lt;- fread(str_c(derived_data_path, 
+                                  &quot;/labevents_filtered_itemid.csv.gz&quot;),
+                          header = FALSE,
+                          col.names = c(&quot;subject_id&quot;, 
+                                        &quot;hadm_id&quot;,
+                                        &quot;itemid&quot;, 
+                                        &quot;charttime&quot;, 
+                                        &quot;valuenum&quot;),
+                          nThread = 4) %&gt;%
+    as_tibble() %&gt;%
+    mutate_at(c(&quot;subject_id&quot;, &quot;hadm_id&quot;, &quot;itemid&quot;), as.numeric) %&gt;%
+    mutate(charttime = ymd_hms(charttime)) 
+    
+    labevents_tble %&gt;%
+      fwrite(&quot;labevents_filtered.csv.gz&quot;, nThread = 4)
+} 
+
+labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre>
+</div>
+</div>
 </div>
 <div id="q7.-vitals-from-chartered-events" class="section level2">
 <h2>Q7. Vitals from chartered events</h2>
 <p>We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate. Find the <code>itemid</code>s of these vitals from <code>d_items.csv.gz</code> and retrieve a subset of <code>chartevents.csv.gz</code> only containing these items.</p>
 <p><code>chartevents.csv.gz</code> (<a href="https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/" class="uri">https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/</a>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The <code>itemid</code> variable indicates a single measurement type in the database. The <code>value</code> variable is the value measured for <code>itemid</code>.</p>
 <p><code>d_items.csv.gz</code> (<a href="https://mimic-iv.mit.edu/docs/datasets/icu/d_items/" class="uri">https://mimic-iv.mit.edu/docs/datasets/icu/d_items/</a>) is the dictionary for the <code>itemid</code> in <code>chartevents.csv.gz</code>.</p>
-<div id="solution-4" class="section level3">
+<div id="solution-5" class="section level3">
 <h3>Solution</h3>
-<pre class="r"><code>chart_key &lt;- read_csv(str_c(mimic_path, &quot;/icu/d_items.csv.gz&quot;)) %&gt;%
-  filter(str_detect(label, &#39;systolic&#39;))</code></pre>
+<p>As with <code>labevents.csv.gz</code>, the <code>chartevents.csv.gz</code> file is massive.</p>
+<pre class="bash"><code>zcat /usr/203b-data/mimic-iv/icu/chartevents.csv.gz | wc -l</code></pre>
+<p>The original file has 327,363,275 lines and can not be read into RStudio easily. Thus, a filtered version of the file was created by Dr. Zhou.</p>
+<pre class="bash"><code>zcat /usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz | 
+  wc -l</code></pre>
+<p>The filtered file has 30,095,996 lines and is easier to work with.</p>
+<div id="the-process-i-would-have-used-1" class="section level4">
+<h4>The Process I would have used</h4>
+<p>As before, the problem could not be completed as initially intended. However, a similar process to that described in Question 6 would have been used to get the final filtered version of the dataset.</p>
+<p>First, read in the dictionary file for chart items:</p>
+<pre class="r"><code>chart_codes &lt;- read_csv(str_c(mimic_path, &quot;/icu/d_items.csv.gz&quot;)) %&gt;%
+  print(width = Inf) </code></pre>
 <pre><code>## 
 ## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
@@ -1011,21 +1090,57 @@ labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre
 ##   lownormalvalue = col_double(),
 ##   highnormalvalue = col_double()
 ## )</code></pre>
-<pre class="r"><code>chart_key %&gt;%
+<pre><code>## # A tibble: 3,835 x 9
+##    itemid label                                abbreviation       linksto       
+##     &lt;dbl&gt; &lt;chr&gt;                                &lt;chr&gt;              &lt;chr&gt;         
+##  1 220003 ICU Admission date                   ICU Admission date datetimeevents
+##  2 220045 Heart Rate                           HR                 chartevents   
+##  3 220046 Heart rate Alarm - High              HR Alarm - High    chartevents   
+##  4 220047 Heart Rate Alarm - Low               HR Alarm - Low     chartevents   
+##  5 220048 Heart Rhythm                         Heart Rhythm       chartevents   
+##  6 220050 Arterial Blood Pressure systolic     ABPs               chartevents   
+##  7 220051 Arterial Blood Pressure diastolic    ABPd               chartevents   
+##  8 220052 Arterial Blood Pressure mean         ABPm               chartevents   
+##  9 220056 Arterial Blood Pressure Alarm - Low  ABP Alarm - Low    chartevents   
+## 10 220058 Arterial Blood Pressure Alarm - High ABP Alarm - High   chartevents   
+##    category            unitname param_type    lownormalvalue highnormalvalue
+##    &lt;chr&gt;               &lt;chr&gt;    &lt;chr&gt;                  &lt;dbl&gt;           &lt;dbl&gt;
+##  1 ADT                 &lt;NA&gt;     Date and time             NA              NA
+##  2 Routine Vital Signs bpm      Numeric                   NA              NA
+##  3 Alarms              bpm      Numeric                   NA              NA
+##  4 Alarms              bpm      Numeric                   NA              NA
+##  5 Routine Vital Signs &lt;NA&gt;     Text                      NA              NA
+##  6 Routine Vital Signs mmHg     Numeric                   90             140
+##  7 Routine Vital Signs mmHg     Numeric                   60              90
+##  8 Routine Vital Signs mmHg     Numeric                   NA              NA
+##  9 Alarms              mmHg     Numeric                   NA              NA
+## 10 Alarms              mmHg     Numeric                   NA              NA
+## # … with 3,825 more rows</code></pre>
+<p>Search for key terms in the <code>label</code> column to find the lab measurement of interest. For example, to search for heart rate and get a vector of associated <code>itemid</code> values:</p>
+<pre class="r"><code>heart_rate_ids &lt;- chart_codes %&gt;%
+  filter(str_detect(label, regex(&quot;heart rate&quot;, ignore_case = T)))  %&gt;%
+  .$itemid %&gt;% 
   print()</code></pre>
-<pre><code>## # A tibble: 5 x 9
-##   itemid label abbreviation linksto category unitname param_type lownormalvalue
-##    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;
-## 1 220050 Arte… ABPs         charte… Routine… mmHg     Numeric                90
-## 2 220059 Pulm… PAPs         charte… Hemodyn… mmHg     Numeric                15
-## 3 220179 Non … NBPs         charte… Routine… mmHg     Numeric                NA
-## 4 226850 RV s… RV systolic… charte… PA Line… mmHg     Numeric                NA
-## 5 226852 PA s… PA systolic… charte… PA Line… mmHg     Numeric                NA
-## # … with 1 more variable: highnormalvalue &lt;dbl&gt;</code></pre>
-<pre class="r"><code>temp_path &lt;- &quot;/usr/203b-data/mimic-iv-derived-data&quot;
-
-if(!file.exists(&quot;chartevents_filtered.csv.gz&quot;)) {
-    chartevents_tble &lt;- fread(str_c(temp_path, &quot;/chartevents_filtered_itemid.csv.gz&quot;),
+<pre><code>## [1] 220045 220046 220047</code></pre>
+<p>Finally, assuming the <code>chartevents</code> file has been read into tibble <code>chart_events</code>, the most frequently occuring heart rate associated <code>itemid</code> can be found and saved.</p>
+<pre class="r"><code>top_heart_rate_id &lt;- chart_events %&gt;%
+  filter(itemid %in% heart_rate_ids) %&gt;%
+  count(itemid) %&gt;%
+  arrange(desc(n)) %&gt;%
+  slice(1) %&gt;%
+  .$itemid %&gt;%
+  print()</code></pre>
+<p>Once this process has been repeated for all measurements of interest, and desired <code>itemid</code> values have been saved into vector <code>top_ids</code>, the <code>chart_events</code> data can be filtered to contain only the subset of desired measurements.</p>
+<pre class="r"><code>chart_events &lt;- chart_events %&gt;%
+  filter(itemid %in% top_ids %&gt;%
+  print()</code></pre>
+</div>
+<div id="reading-in-the-filtered-file-1" class="section level4">
+<h4>Reading in the filtered file</h4>
+<p>Dr. Zhou did the steps outlined above and provided the pre-filtered file <code>chartevents_filtered.csv.gz</code>. This was read in and saved.</p>
+<pre class="r"><code>if(!file.exists(&quot;chartevents_filtered.csv.gz&quot;)) {
+    chartevents_tble &lt;- fread(str_c(derived_data_path, 
+                                    &quot;/chartevents_filtered_itemid.csv.gz&quot;),
                           header = FALSE,
                           col.names = c(&quot;subject_id&quot;,
                                        &quot;hadm_id&quot;,
@@ -1044,10 +1159,8 @@ if(!file.exists(&quot;chartevents_filtered.csv.gz&quot;)) {
     
 } 
 
-chart &lt;- fread(&quot;chartevents_filtered.csv.gz&quot;, nThread = 1)
-
-chart %&gt;% 
-  print(width = Inf)</code></pre>
+chart &lt;- fread(&quot;chartevents_filtered.csv.gz&quot;, nThread = 1)</code></pre>
+</div>
 </div>
 </div>
 <div id="q8.-putting-things-together" class="section level2">

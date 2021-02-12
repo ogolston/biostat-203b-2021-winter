@@ -390,7 +390,7 @@ This filtered file has 30,773,355 lines and contains only the variables of inter
 
 
 
-## The Process I would have used
+#### The Process I would have used
 Due to the technical issues described above, it was not possible to complete the problem as originally assigned. However, below is the code that could have been used to find the `itemids` for the lab measurements of interest, and to filter the dataset to contain only those measurements. 
 
 First, load the dictionary file, which has information about the various lab measurements:
@@ -402,7 +402,7 @@ labcodes <- read_csv(str_c(mimic_path, "/hosp/d_labitems.csv.gz")) %>%
 Search for key terms in the `label` column to find the lab measurement of interest. For example, creatinine: 
 ```{r}
 creatinine_items <- labcodes %>%
-  filter(str_detect(label, "Creatinine")) %>%
+  filter(str_detect(label, regex("Creatinine", ignore_case = TRUE))) %>%
   print()
 ``` 
 Since there are so many creatinine related measurements, it may make sense to filter this list further, especially to make our final dataset more manageable. First we create a vector of all `itemid` values associated with creatinine.
@@ -434,14 +434,15 @@ labs <- labs %>%
 ```
 
 
-## Reading in the filtered file
+#### Reading in the filtered file
 
-Dr. Zhou conducted the above steps to create the filtered data file. This was read in and saved using the following code.
+Dr. Zhou conducted the above steps to create the filtered data file. This was read in and saved using the following code. `charttime` was saved as a date variable. 
 ```{r eval = F}
-temp_path <- "/usr/203b-data/mimic-iv-derived-data"
+derived_data_path <- "/usr/203b-data/mimic-iv-derived-data"
 
 if(!file.exists("labevents_filtered.csv.gz")) {
-    labevents_tble <- fread(str_c(temp_path, "/labevents_filtered_itemid.csv.gz"),
+    labevents_tble <- fread(str_c(derived_data_path, 
+                                  "/labevents_filtered_itemid.csv.gz"),
                           header = FALSE,
                           col.names = c("subject_id", 
                                         "hadm_id",
@@ -486,21 +487,51 @@ zcat /usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz |
 The filtered file has 30,095,996 lines and is easier to work with.
 
 
+#### The Process I would have used
 
+As before, the problem could not be completed as initially intended. However, a similar process to that described in Question 6 would have been used to get the final filtered version of the dataset.  
+
+
+First, read in the dictionary file for chart items: 
 ```{r}
-chart_key <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
-  filter(str_detect(label, 'systolic'))
+chart_codes <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
+  print(width = Inf) 
+```
 
-chart_key %>%
+Search for key terms in the `label` column to find the lab measurement of interest. For example, to search for heart rate and get a vector of associated `itemid` values: 
+```{r}
+heart_rate_ids <- chart_codes %>%
+  filter(str_detect(label, regex("heart rate", ignore_case = T)))  %>%
+  .$itemid %>% 
+  print()
+```
+Finally, assuming the `chartevents` file has been read into tibble `chart_events`, the most frequently occuring heart rate associated `itemid` can be found and saved.
+```{r eval = F}
+top_heart_rate_id <- chart_events %>%
+  filter(itemid %in% heart_rate_ids) %>%
+  count(itemid) %>%
+  arrange(desc(n)) %>%
+  slice(1) %>%
+  .$itemid %>%
+  print()
+```
+
+Once this process has been repeated for all measurements of interest, and desired `itemid` values have been saved into vector `top_ids`, the `chart_events` data can be filtered to contain only the subset of desired measurements.
+
+```{r eval=F}
+chart_events <- chart_events %>%
+  filter(itemid %in% top_ids %>%
   print()
 ```
 
 
-```{r eval=F}
-temp_path <- "/usr/203b-data/mimic-iv-derived-data"
+#### Reading in the filtered file
 
+Dr. Zhou did the steps outlined above and provided the pre-filtered file `chartevents_filtered.csv.gz`. This was read in and saved. 
+```{r eval=F}
 if(!file.exists("chartevents_filtered.csv.gz")) {
-    chartevents_tble <- fread(str_c(temp_path, "/chartevents_filtered_itemid.csv.gz"),
+    chartevents_tble <- fread(str_c(derived_data_path, 
+                                    "/chartevents_filtered_itemid.csv.gz"),
                           header = FALSE,
                           col.names = c("subject_id",
                                        "hadm_id",
@@ -520,9 +551,6 @@ if(!file.exists("chartevents_filtered.csv.gz")) {
 } 
 
 chart <- fread("chartevents_filtered.csv.gz", nThread = 1)
-
-chart %>% 
-  print(width = Inf)
 ```
 
 ## Q8. Putting things together
