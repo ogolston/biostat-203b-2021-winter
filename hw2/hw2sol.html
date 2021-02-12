@@ -405,7 +405,9 @@ summary {
 <li><a href="#reading-in-the-filtered-file-1">Reading in the filtered file</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#q8.-putting-things-together">Q8. Putting things together</a></li>
+<li><a href="#q8.-putting-things-together">Q8. Putting things together</a><ul>
+<li><a href="#solution-6">Solution</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -553,6 +555,14 @@ time3 &lt;- system.time(file3 &lt;- fread(file_path))</code></pre>
 </tbody>
 </table>
 <p><code>read.csv</code> seems to be the slowest, by far. <code>read_csv</code> and <code>fread</code> are similar, but <code>fread</code> tends to be a slight bit faster.</p>
+<p>Memory is an issue for this assignment, so these variables are removed from the environment.</p>
+<pre class="r"><code>rm(file1)
+rm(file2)
+rm(file3)
+
+rm(time1)
+rm(time2)
+rm(time3)</code></pre>
 </div>
 </div>
 <div id="q3.-icu-stays" class="section level2">
@@ -1025,15 +1035,35 @@ admissions_unique %&gt;%
   slice(1) %&gt;%
   .$itemid %&gt;%
   print()</code></pre>
-<p>This process could be repeated for the other requested lab items. Dr. Zhou provided the <code>itemids</code> for the all measurements. Finally, the labs file can be filtered down to only these measurements of interest.</p>
-<pre class="r"><code>labs &lt;- labs %&gt;%
+<p>This process could be repeated for the other requested lab items. Dr. Zhou provided the <code>itemids</code> for the all measurements. These can be used to filter down the <code>labcodes</code> frame.</p>
+<pre class="r"><code>lab_ids &lt;- labcodes %&gt;%
   filter(itemid %in% c(&quot;50912&quot;, &quot;50971&quot;, &quot;50983&quot;, &quot;50902&quot;, &quot;50882&quot;, &quot;51221&quot;, 
                       &quot;51301&quot;, &quot;50931&quot;, &quot;50960&quot;, &quot;50893&quot;, &quot;50813&quot;)) %&gt;%
+  select(itemid, label) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 11 x 2
+##    itemid label            
+##     &lt;dbl&gt; &lt;chr&gt;            
+##  1  50882 Bicarbonate      
+##  2  50893 Calcium, Total   
+##  3  50902 Chloride         
+##  4  50912 Creatinine       
+##  5  50931 Glucose          
+##  6  51221 Hematocrit       
+##  7  50813 Lactate          
+##  8  50960 Magnesium        
+##  9  50971 Potassium        
+## 10  50983 Sodium           
+## 11  51301 White Blood Cells</code></pre>
+<p>Finally, the <code>labs</code> data can be filtered down to only these measurements of interest.</p>
+<pre class="r"><code>labs &lt;- labs %&gt;%
+  filter(itemid %in% lab_ids$itemid) %&gt;%
   print()</code></pre>
 </div>
 <div id="reading-in-the-filtered-file" class="section level4">
 <h4>Reading in the filtered file</h4>
-<p>Dr. Zhou conducted the above steps to create the filtered data file. This was read in and saved using the following code. <code>charttime</code> was saved as a date variable.</p>
+<p>Dr. Zhou conducted the above steps to obtain the list of <code>itemid</code> values of interest. Then, using <code>awk</code> in bash, he filtered only rows with the <code>itemid</code> values of interest, and kept only the variables of interest.</p>
+<p>The resulting dataset was read in and saved using the following code. <code>charttime</code> was saved as a date variable, since <code>fread</code> was parsing it as a character.</p>
 <pre class="r"><code>derived_data_path &lt;- &quot;/usr/203b-data/mimic-iv-derived-data&quot;
 
 if(!file.exists(&quot;labevents_filtered.csv.gz&quot;)) {
@@ -1052,9 +1082,13 @@ if(!file.exists(&quot;labevents_filtered.csv.gz&quot;)) {
     
     labevents_tble %&gt;%
       fwrite(&quot;labevents_filtered.csv.gz&quot;, nThread = 4)
-} 
-
-labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre>
+} </code></pre>
+<p>Can uncomment the below code to read in the data.</p>
+<pre class="r"><code>#labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre>
+<p>Since memory is an issue, I remove unnecessary data from the environment, such as the full lab codes dictionary and the demonstration data frames for creatinine.</p>
+<pre class="r"><code>rm(labcodes)
+rm(creatinine_items)
+rm(creatinine_ids)</code></pre>
 </div>
 </div>
 </div>
@@ -1116,20 +1150,71 @@ labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre
 ##  9 Alarms              mmHg     Numeric                   NA              NA
 ## 10 Alarms              mmHg     Numeric                   NA              NA
 ## # … with 3,825 more rows</code></pre>
-<p>Search for key terms in the <code>label</code> column to find the lab measurement of interest. For example, to search for heart rate and get a vector of associated <code>itemid</code> values:</p>
-<pre class="r"><code>heart_rate_ids &lt;- chart_codes %&gt;%
-  filter(str_detect(label, regex(&quot;heart rate&quot;, ignore_case = T)))  %&gt;%
-  .$itemid %&gt;% 
-  print()</code></pre>
-<pre><code>## [1] 220045 220046 220047</code></pre>
-<p>Finally, assuming the <code>chartevents</code> file has been read into tibble <code>chart_events</code>, the most frequently occuring heart rate associated <code>itemid</code> can be found and saved.</p>
-<pre class="r"><code>top_heart_rate_id &lt;- chart_events %&gt;%
-  filter(itemid %in% heart_rate_ids) %&gt;%
-  count(itemid) %&gt;%
-  arrange(desc(n)) %&gt;%
-  slice(1) %&gt;%
-  .$itemid %&gt;%
-  print()</code></pre>
+<p>Search for key terms in the <code>label</code> column to find the lab measurement of interest. For example, to search for heart rate, view the corresponding chart items, and get a vector of <code>itemid</code> values:</p>
+<pre class="r"><code>measurements &lt;- c(&quot;heart rate&quot;, &quot;blood pressure mean&quot;, &quot;systolic&quot;, 
+                  &quot;temperature&quot;, &quot;SpO2&quot;, &quot;respiratory rate&quot;)
+
+for (item in measurements) {
+  chart_codes %&gt;%
+    filter(str_detect(label, regex(item, ignore_case = T))) %&gt;%
+    print()
+}</code></pre>
+<pre><code>## # A tibble: 3 x 9
+##   itemid label abbreviation linksto category unitname param_type lownormalvalue
+##    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;
+## 1 220045 Hear… HR           charte… Routine… bpm      Numeric                NA
+## 2 220046 Hear… HR Alarm - … charte… Alarms   bpm      Numeric                NA
+## 3 220047 Hear… HR Alarm - … charte… Alarms   bpm      Numeric                NA
+## # … with 1 more variable: highnormalvalue &lt;dbl&gt;
+## # A tibble: 2 x 9
+##   itemid label abbreviation linksto category unitname param_type lownormalvalue
+##    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;
+## 1 220052 Arte… ABPm         charte… Routine… mmHg     Numeric                NA
+## 2 220181 Non … NBPm         charte… Routine… mmHg     Numeric                NA
+## # … with 1 more variable: highnormalvalue &lt;dbl&gt;
+## # A tibble: 11 x 9
+##    itemid label abbreviation linksto category unitname param_type lownormalvalue
+##     &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;
+##  1 220050 Arte… ABPs         charte… Routine… mmHg     Numeric                90
+##  2 220059 Pulm… PAPs         charte… Hemodyn… mmHg     Numeric                15
+##  3 220179 Non … NBPs         charte… Routine… mmHg     Numeric                NA
+##  4 227243 Manu… Manual BPs R charte… Routine… mmHg     Numeric                NA
+##  5 225309 ART … ART BP Syst… charte… Routine… mmHg     Numeric                NA
+##  6 229669 Pulm… Pulmonary A… charte… Impella  mmHg.    Numeric                NA
+##  7 229899 Left… Left Ventri… charte… Impella  mmHg     Numeric                NA
+##  8 224167 Manu… Manual BPs L charte… Routine… mmHg     Numeric                NA
+##  9 228152 Aort… Aortic Pres… charte… Impella  mmHg.    Numeric                NA
+## 10 226850 RV s… RV systolic… charte… PA Line… mmHg     Numeric                NA
+## 11 226852 PA s… PA systolic… charte… PA Line… mmHg     Numeric                NA
+## # … with 1 more variable: highnormalvalue &lt;dbl&gt;
+## # A tibble: 9 x 9
+##   itemid label abbreviation linksto category unitname param_type lownormalvalue
+##    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;
+## 1 227054 Temp… Temperature… charte… Scores … °F       Numeric                NA
+## 2 223761 Temp… Temperature… charte… Routine… °F       Numeric                NA
+## 3 223762 Temp… Temperature… charte… Routine… °C       Numeric                NA
+## 4 224027 Skin… Skin Temp    charte… Skin - … &lt;NA&gt;     Text                   NA
+## 5 229236 Cere… Cerebral T … charte… Hemodyn… °C       Numeric                NA
+## 6 224642 Temp… Temp Site    charte… Routine… &lt;NA&gt;     Text                   NA
+## 7 226329 Bloo… Blood Temp … charte… Routine… °C       Numeric                NA
+## 8 228242 Pt. … Pt. Tempera… charte… Labs     None     Numeric                NA
+## 9 224674 Chan… Changes in … charte… Toxicol… &lt;NA&gt;     Text                   NA
+## # … with 1 more variable: highnormalvalue &lt;dbl&gt;
+## # A tibble: 2 x 9
+##   itemid label abbreviation linksto category unitname param_type lownormalvalue
+##    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;
+## 1 229862 Fore… Forehead Sp… charte… Routine… &lt;NA&gt;     Checkbox               NA
+## 2 226253 SpO2… SpO2 Desat … charte… Alarms   %        Numeric                NA
+## # … with 1 more variable: highnormalvalue &lt;dbl&gt;
+## # A tibble: 4 x 9
+##   itemid label abbreviation linksto category unitname param_type lownormalvalue
+##    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;
+## 1 220210 Resp… RR           charte… Respira… insp/min Numeric                NA
+## 2 224688 Resp… Respiratory… charte… Respira… insp/min Numeric                NA
+## 3 224689 Resp… Respiratory… charte… Respira… insp/min Numeric                NA
+## 4 224690 Resp… Respiratory… charte… Respira… insp/min Numeric                NA
+## # … with 1 more variable: highnormalvalue &lt;dbl&gt;</code></pre>
+<p>We can inspect the output and choose which measurement seems the most reasonable to keep However, if there is any doubt about which <code>itemid</code> to use, we use a similar process to what was done in Q6.</p>
 <p>Once this process has been repeated for all measurements of interest, and desired <code>itemid</code> values have been saved into vector <code>top_ids</code>, the <code>chart_events</code> data can be filtered to contain only the subset of desired measurements.</p>
 <pre class="r"><code>chart_events &lt;- chart_events %&gt;%
   filter(itemid %in% top_ids %&gt;%
@@ -1137,7 +1222,7 @@ labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre
 </div>
 <div id="reading-in-the-filtered-file-1" class="section level4">
 <h4>Reading in the filtered file</h4>
-<p>Dr. Zhou did the steps outlined above and provided the pre-filtered file <code>chartevents_filtered.csv.gz</code>. This was read in and saved.</p>
+<p>As with the <code>labevents</code> data, Dr. Zhou did the steps outlined above but used <code>awk</code> to select only the necessary columns and rows of the <code>chartevents</code> data. This pre-filtered file, <code>chartevents_filtered.csv.gz</code>, was read in and saved.</p>
 <pre class="r"><code>if(!file.exists(&quot;chartevents_filtered.csv.gz&quot;)) {
     chartevents_tble &lt;- fread(str_c(derived_data_path, 
                                     &quot;/chartevents_filtered_itemid.csv.gz&quot;),
@@ -1157,9 +1242,46 @@ labs &lt;- fread(&quot;labevents_filtered.csv.gz&quot;, nThread = 1)</code></pre
     chartevents_tble %&gt;%
       fwrite(&quot;chartevents_filtered.csv.gz&quot;, nThread = 4)
     
-} 
-
-chart &lt;- fread(&quot;chartevents_filtered.csv.gz&quot;, nThread = 1)</code></pre>
+} </code></pre>
+<p>Can uncomment the below code to read this in.</p>
+<pre class="r"><code>#chart_events &lt;- fread(&quot;chartevents_filtered.csv.gz&quot;, nThread = 1)</code></pre>
+<p>This code chunk has a reduced file that I will create in Q8.</p>
+<pre class="r"><code>chart_events &lt;- fread(&quot;chartevents_filtered_icustays.csv.gz&quot;, nThread = 1)</code></pre>
+<p>I want to see what codes Dr. Zhou selected.</p>
+<pre class="r"><code>chart_events %&gt;%
+  group_by(itemid) %&gt;%
+  count()</code></pre>
+<pre><code>## # A tibble: 7 x 2
+## # Groups:   itemid [7]
+##   itemid       n
+##    &lt;int&gt;   &lt;int&gt;
+## 1 220045 5734767
+## 2 220050 2209687
+## 3 220052 2218618
+## 4 220179 2958294
+## 5 220181 2956016
+## 6 220210 5662763
+## 7 223761 1135193</code></pre>
+<p>The codes are: 220045, 220050, 220052, 220179, 220181, 220210, 223761.</p>
+<p>I want to see what these correspond to and save the results.</p>
+<pre class="r"><code>chart_ids &lt;- chart_codes %&gt;%
+  filter(itemid %in% c(&quot;220045&quot;, &quot;220050&quot;, &quot;220052&quot;, 
+                       &quot;220179&quot;, &quot;220181&quot;, &quot;220210&quot;, &quot;223761&quot;)) %&gt;%
+  select(itemid, label) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 7 x 2
+##   itemid label                               
+##    &lt;dbl&gt; &lt;chr&gt;                               
+## 1 220045 Heart Rate                          
+## 2 220050 Arterial Blood Pressure systolic    
+## 3 220052 Arterial Blood Pressure mean        
+## 4 220179 Non Invasive Blood Pressure systolic
+## 5 220181 Non Invasive Blood Pressure mean    
+## 6 220210 Respiratory Rate                    
+## 7 223761 Temperature Fahrenheit</code></pre>
+<p>Remove unnecessary data from environment:</p>
+<pre class="r"><code>rm(chart_codes)
+rm(measurements)</code></pre>
 </div>
 </div>
 </div>
@@ -1185,12 +1307,374 @@ chart &lt;- fread(&quot;chartevents_filtered.csv.gz&quot;, nThread = 1)</code></
 </li>
 <li>an indicator variable whether the patient died within 30 days of hospital admission</li>
 </ul>
-<pre class="r"><code>data &lt;- icu_stays %&gt;%
-  distinct(subject_id, .keep_all = T) %&gt;%
-  left_join(patients, by = &quot;subject_id&quot;) %&gt;%
-  filter(anchor_age &gt;= 18) %&gt;%
+<div id="solution-6" class="section level3">
+<h3>Solution</h3>
+<p>The “base” data for this problem is the ICU data, which I stored in the data frame <code>icu_stays</code> in Question 3. The first goal is to keep only the first ICU stay for each patient, which can be done by grouping by <code>subject_id</code> and then keeping only the first chronological stay.</p>
+<pre class="r"><code>full_icu_tibble &lt;- icu_stays %&gt;%
+  group_by(subject_id) %&gt;%
+  filter(rank(intime) == 1) %&gt;%
+  ungroup()</code></pre>
+<p>Next, we join to the <code>admissions</code> (created in Q4) and <code>patients</code> (from Q5): The ICU stay can be joined to <code>admissions</code> by <code>hadm_id</code> (we also use <code>subject_id</code>, but it’s not strictly necessary), and can be joined to <code>patients</code> by <code>subject_id</code>.</p>
+<pre class="r"><code>full_icu_tibble &lt;- full_icu_tibble %&gt;%
   left_join(admissions, by = c(&quot;hadm_id&quot;, &quot;subject_id&quot;)) %&gt;% 
+  left_join(patients, by = c(&quot;subject_id&quot;)) %&gt;%
   print()</code></pre>
+<pre><code>## # A tibble: 50,048 x 26
+##    subject_id hadm_id stay_id first_careunit last_careunit intime             
+##         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;dttm&gt;             
+##  1   13713711  2.58e7  3.64e7 Trauma SICU (… Trauma SICU … 2157-09-15 15:30:00
+##  2   13173210  2.23e7  3.82e7 Coronary Care… Coronary Car… 2178-02-12 17:13:50
+##  3   10213765  2.85e7  3.98e7 Trauma SICU (… Trauma SICU … 2113-04-10 14:11:00
+##  4   17530304  2.18e7  3.58e7 Trauma SICU (… Trauma SICU … 2129-03-21 07:09:00
+##  5   16766597  2.12e7  3.93e7 Trauma SICU (… Trauma SICU … 2115-07-11 23:15:59
+##  6   17684317  2.87e7  3.70e7 Trauma SICU (… Trauma SICU … 2148-04-14 22:03:00
+##  7   15693895  2.12e7  3.48e7 Surgical Inte… Surgical Int… 2147-06-02 23:31:46
+##  8   13859862  2.50e7  3.19e7 Medical/Surgi… Medical/Surg… 2152-04-07 01:43:35
+##  9   12200371  2.73e7  3.23e7 Medical/Surgi… Medical/Surg… 2146-02-18 18:14:25
+## 10   13307171  2.11e7  3.80e7 Neuro Stepdown Neuro Stepdo… 2145-11-22 00:54:00
+## # … with 50,038 more rows, and 20 more variables: outtime &lt;dttm&gt;, los &lt;dbl&gt;,
+## #   admittime &lt;dttm&gt;, dischtime &lt;dttm&gt;, deathtime &lt;dttm&gt;, admission_type &lt;chr&gt;,
+## #   admission_location &lt;chr&gt;, discharge_location &lt;chr&gt;, insurance &lt;chr&gt;,
+## #   language &lt;chr&gt;, marital_status &lt;chr&gt;, ethnicity &lt;chr&gt;, edregtime &lt;dttm&gt;,
+## #   edouttime &lt;dttm&gt;, hospital_expire_flag &lt;dbl&gt;, gender &lt;chr&gt;,
+## #   anchor_age &lt;dbl&gt;, anchor_year &lt;dbl&gt;, anchor_year_group &lt;chr&gt;, dod &lt;lgl&gt;</code></pre>
+<p>Now, we want to keep only adults. Since the only age recorded is the age during the “anchor year”, we need to calculate what the age at time of the admission was. We do this by finding how many years have passed since the <code>anchor_year</code> and adding those to the <code>anchor_age</code>. Then, we filter such that only adults (&gt; 18) are kept.</p>
+<pre class="r"><code>full_icu_tibble &lt;- full_icu_tibble %&gt;%
+  mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %&gt;%
+  filter(age_at_adm &gt; 18) %&gt;% 
+  print()</code></pre>
+<pre><code>## # A tibble: 49,971 x 27
+##    subject_id hadm_id stay_id first_careunit last_careunit intime             
+##         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;dttm&gt;             
+##  1   13713711  2.58e7  3.64e7 Trauma SICU (… Trauma SICU … 2157-09-15 15:30:00
+##  2   13173210  2.23e7  3.82e7 Coronary Care… Coronary Car… 2178-02-12 17:13:50
+##  3   10213765  2.85e7  3.98e7 Trauma SICU (… Trauma SICU … 2113-04-10 14:11:00
+##  4   17530304  2.18e7  3.58e7 Trauma SICU (… Trauma SICU … 2129-03-21 07:09:00
+##  5   16766597  2.12e7  3.93e7 Trauma SICU (… Trauma SICU … 2115-07-11 23:15:59
+##  6   17684317  2.87e7  3.70e7 Trauma SICU (… Trauma SICU … 2148-04-14 22:03:00
+##  7   15693895  2.12e7  3.48e7 Surgical Inte… Surgical Int… 2147-06-02 23:31:46
+##  8   13859862  2.50e7  3.19e7 Medical/Surgi… Medical/Surg… 2152-04-07 01:43:35
+##  9   12200371  2.73e7  3.23e7 Medical/Surgi… Medical/Surg… 2146-02-18 18:14:25
+## 10   13307171  2.11e7  3.80e7 Neuro Stepdown Neuro Stepdo… 2145-11-22 00:54:00
+## # … with 49,961 more rows, and 21 more variables: outtime &lt;dttm&gt;, los &lt;dbl&gt;,
+## #   admittime &lt;dttm&gt;, dischtime &lt;dttm&gt;, deathtime &lt;dttm&gt;, admission_type &lt;chr&gt;,
+## #   admission_location &lt;chr&gt;, discharge_location &lt;chr&gt;, insurance &lt;chr&gt;,
+## #   language &lt;chr&gt;, marital_status &lt;chr&gt;, ethnicity &lt;chr&gt;, edregtime &lt;dttm&gt;,
+## #   edouttime &lt;dttm&gt;, hospital_expire_flag &lt;dbl&gt;, gender &lt;chr&gt;,
+## #   anchor_age &lt;dbl&gt;, anchor_year &lt;dbl&gt;, anchor_year_group &lt;chr&gt;, dod &lt;lgl&gt;,
+## #   age_at_adm &lt;dbl&gt;</code></pre>
+<p>There are 49,971 unique adults with ICU stays.</p>
+<p>Now, we want to merge lab results to this table. However, we only want to keep the first lab result of each type, during the ICU stay.</p>
+<p>The filtered <code>labevents</code> file is still huge, so now is a convenient time to save a version that keeps only observations that will be used for this final step.</p>
+<pre class="r"><code>if(!file.exists(&quot;labevents_filtered_icustays.csv.gz&quot;)) {
+  labs %&gt;%
+    semi_join(full_icu_tibble, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
+    fwrite(&quot;labevents_filtered_icustays.csv.gz&quot;, nThread = 4)
+}</code></pre>
+<pre class="r"><code>labs &lt;- fread(&quot;labevents_filtered_icustays.csv.gz&quot;, nThread = 1)</code></pre>
+<pre class="r"><code>full_icu_labs &lt;- labs %&gt;%
+  semi_join(full_icu_tibble, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
+  left_join(select(full_icu_tibble, subject_id, hadm_id, intime), 
+                   by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
+  filter(charttime &gt;= intime) %&gt;%
+  group_by(subject_id, itemid) %&gt;%
+  arrange(charttime, .by_group = TRUE) %&gt;%   #sort within each group 
+  slice_head(n = 1) %&gt;%   
+  select(-charttime, -intime) %&gt;%
+  spread(key = itemid, value = valuenum) %&gt;%
+  right_join(full_icu_tibble, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
+  ungroup() %&gt;%
+  rename_at(vars(as.character(lab_ids$itemid)), ~lab_ids$label) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 49,971 x 38
+##    subject_id hadm_id Lactate Bicarbonate `Calcium, Total` Chloride Creatinine
+##         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt;            &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+##  1   10000032  2.91e7    NA            21              9.3      102        0.5
+##  2   10000980  2.69e7    NA            23              9.2      103        2.2
+##  3   10001217  2.46e7    NA            23              8.2      104        0.4
+##  4   10001725  2.56e7    NA            24              9.1      106        0.8
+##  5   10001884  2.62e7     1.5          33              9.8       96        1.1
+##  6   10002013  2.36e7     3.3          23             NA        109        1.1
+##  7   10002155  2.38e7    NA            25              8.8      106        0.9
+##  8   10002223  2.25e7    NA            26              8.7      102        0.8
+##  9   10002428  2.87e7     1.6          20              7.4       98        0.8
+## 10   10002443  2.13e7     1.7          20              7.6      101        0.8
+## # … with 49,961 more rows, and 31 more variables: Glucose &lt;dbl&gt;,
+## #   Magnesium &lt;dbl&gt;, Potassium &lt;dbl&gt;, Sodium &lt;dbl&gt;, Hematocrit &lt;dbl&gt;, `White
+## #   Blood Cells` &lt;dbl&gt;, stay_id &lt;dbl&gt;, first_careunit &lt;chr&gt;,
+## #   last_careunit &lt;chr&gt;, intime &lt;dttm&gt;, outtime &lt;dttm&gt;, los &lt;dbl&gt;,
+## #   admittime &lt;dttm&gt;, dischtime &lt;dttm&gt;, deathtime &lt;dttm&gt;, admission_type &lt;chr&gt;,
+## #   admission_location &lt;chr&gt;, discharge_location &lt;chr&gt;, insurance &lt;chr&gt;,
+## #   language &lt;chr&gt;, marital_status &lt;chr&gt;, ethnicity &lt;chr&gt;, edregtime &lt;dttm&gt;,
+## #   edouttime &lt;dttm&gt;, hospital_expire_flag &lt;dbl&gt;, gender &lt;chr&gt;,
+## #   anchor_age &lt;dbl&gt;, anchor_year &lt;dbl&gt;, anchor_year_group &lt;chr&gt;, dod &lt;lgl&gt;,
+## #   age_at_adm &lt;dbl&gt;</code></pre>
+<pre class="r"><code>rm(labs)</code></pre>
+<p>We’ll follow a similar pattern for chart events. First, it’s convenient to save a version with only adults in the ICU data.</p>
+<pre class="r"><code>if(!file.exists(&quot;chartevents_filtered_icustays.csv.gz&quot;)) {
+  chart_events %&gt;%
+    semi_join(full_icu_tibble, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
+    fwrite(&quot;chartevents_filtered_icustays.csv.gz&quot;, nThread = 4)
+}</code></pre>
+<pre class="r"><code>chart_events &lt;- fread(&quot;chartevents_filtered_icustays.csv.gz&quot;, nThread = 1)</code></pre>
+<p>Now, we repeat the same process as above. Notice that we now have two tibbles: <code>full_icu_labs</code> and <code>full_icu_chart</code>. Also, rather than <code>hadm_id</code>, <code>stay_id</code> is the unique identifier for the chart events.</p>
+<pre class="r"><code>full_icu_chart &lt;- chart_events %&gt;%
+  semi_join(full_icu_tibble, by = c(&quot;subject_id&quot;, &quot;stay_id&quot;)) %&gt;%
+  left_join(select(full_icu_tibble, subject_id, stay_id, intime), 
+                   by = c(&quot;subject_id&quot;, &quot;stay_id&quot;)) %&gt;%
+  filter(charttime &gt;= intime) %&gt;%
+  group_by(subject_id, itemid) %&gt;%
+  arrange(charttime, .by_group = TRUE) %&gt;%   #sort within each group 
+  slice_head(n = 1) %&gt;%   
+  select(-charttime, -intime) %&gt;%
+  spread(key = itemid, value = valuenum) %&gt;%
+  right_join(full_icu_tibble, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
+  ungroup() %&gt;%
+  rename_at(vars(as.character(chart_ids$itemid)), ~chart_ids$label) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 49,971 x 35
+##    subject_id hadm_id stay_id.x `Heart Rate` `Arterial Blood… `Arterial Blood…
+##         &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;        &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt;
+##  1   10000032  2.91e7  37529680           91               NA               NA
+##  2   10000980  2.69e7  36742749           77               NA               NA
+##  3   10001217  2.46e7  30327812           86               NA               NA
+##  4   10001725  2.56e7  37542711           55               NA               NA
+##  5   10001884  2.62e7  31832304           38               NA               NA
+##  6   10002013  2.36e7  37106138           80              134               94
+##  7   10002155  2.38e7  34599502           68              115               82
+##  8   10002223  2.25e7  39908879          100               NA               NA
+##  9   10002428  2.87e7  31956612          124               NA               NA
+## 10   10002443  2.13e7  35217462           81               NA               NA
+## # … with 49,961 more rows, and 29 more variables: `Non Invasive Blood Pressure
+## #   systolic` &lt;dbl&gt;, `Non Invasive Blood Pressure mean` &lt;dbl&gt;, `Respiratory
+## #   Rate` &lt;dbl&gt;, `Temperature Fahrenheit` &lt;dbl&gt;, stay_id.y &lt;dbl&gt;,
+## #   first_careunit &lt;chr&gt;, last_careunit &lt;chr&gt;, intime &lt;dttm&gt;, outtime &lt;dttm&gt;,
+## #   los &lt;dbl&gt;, admittime &lt;dttm&gt;, dischtime &lt;dttm&gt;, deathtime &lt;dttm&gt;,
+## #   admission_type &lt;chr&gt;, admission_location &lt;chr&gt;, discharge_location &lt;chr&gt;,
+## #   insurance &lt;chr&gt;, language &lt;chr&gt;, marital_status &lt;chr&gt;, ethnicity &lt;chr&gt;,
+## #   edregtime &lt;dttm&gt;, edouttime &lt;dttm&gt;, hospital_expire_flag &lt;dbl&gt;,
+## #   gender &lt;chr&gt;, anchor_age &lt;dbl&gt;, anchor_year &lt;dbl&gt;, anchor_year_group &lt;chr&gt;,
+## #   dod &lt;lgl&gt;, age_at_adm &lt;dbl&gt;</code></pre>
+<pre class="r"><code>rm(chart_events)</code></pre>
+<p>Left join by all matching variables in the data, since they should match between the two datasets.</p>
+<pre class="r"><code>final_icu_data &lt;- full_icu_labs %&gt;%
+  left_join(full_icu_chart) %&gt;% 
+  print(width = Inf)</code></pre>
+<pre><code>## Joining, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;, &quot;first_careunit&quot;, &quot;last_careunit&quot;, &quot;intime&quot;, &quot;outtime&quot;, &quot;los&quot;, &quot;admittime&quot;, &quot;dischtime&quot;, &quot;deathtime&quot;, &quot;admission_type&quot;, &quot;admission_location&quot;, &quot;discharge_location&quot;, &quot;insurance&quot;, &quot;language&quot;, &quot;marital_status&quot;, &quot;ethnicity&quot;, &quot;edregtime&quot;, &quot;edouttime&quot;, &quot;hospital_expire_flag&quot;, &quot;gender&quot;, &quot;anchor_age&quot;, &quot;anchor_year&quot;, &quot;anchor_year_group&quot;, &quot;dod&quot;, &quot;age_at_adm&quot;)</code></pre>
+<pre><code>## # A tibble: 49,971 x 47
+##    subject_id  hadm_id Lactate Bicarbonate `Calcium, Total` Chloride Creatinine
+##         &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt;            &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+##  1   10000032 29079034    NA            21              9.3      102        0.5
+##  2   10000980 26913865    NA            23              9.2      103        2.2
+##  3   10001217 24597018    NA            23              8.2      104        0.4
+##  4   10001725 25563031    NA            24              9.1      106        0.8
+##  5   10001884 26184834     1.5          33              9.8       96        1.1
+##  6   10002013 23581541     3.3          23             NA        109        1.1
+##  7   10002155 23822395    NA            25              8.8      106        0.9
+##  8   10002223 22494570    NA            26              8.7      102        0.8
+##  9   10002428 28662225     1.6          20              7.4       98        0.8
+## 10   10002443 21329021     1.7          20              7.6      101        0.8
+##    Glucose Magnesium Potassium Sodium Hematocrit `White Blood Cells`  stay_id
+##      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;               &lt;dbl&gt;    &lt;dbl&gt;
+##  1     115       2.3       4.7    132       34.8                 4.1 37529680
+##  2     144       2         4.2    139       30.8                 5.4 36742749
+##  3     113       1.9       3.6    138       33.6                19   30327812
+##  4     146       1.5       3.9    140       39.1                17   37542711
+##  5     148       2.2       4      136       36                  18.4 31832304
+##  6      98       2.1       4      140       28.6                18.2 37106138
+##  7      95       2         4.5    139       37.9                 5.5 34599502
+##  8      88       2         3.9    138       32.5                10.1 39908879
+##  9      99       1.4       3.9    129       28.7                22.4 31956612
+## 10     226       1.6       5.2    133       43.4                20.7 35217462
+##    first_careunit                                  
+##    &lt;chr&gt;                                           
+##  1 Medical Intensive Care Unit (MICU)              
+##  2 Medical Intensive Care Unit (MICU)              
+##  3 Surgical Intensive Care Unit (SICU)             
+##  4 Medical/Surgical Intensive Care Unit (MICU/SICU)
+##  5 Medical Intensive Care Unit (MICU)              
+##  6 Cardiac Vascular Intensive Care Unit (CVICU)    
+##  7 Coronary Care Unit (CCU)                        
+##  8 Trauma SICU (TSICU)                             
+##  9 Medical Intensive Care Unit (MICU)              
+## 10 Coronary Care Unit (CCU)                        
+##    last_careunit                                    intime             
+##    &lt;chr&gt;                                            &lt;dttm&gt;             
+##  1 Medical Intensive Care Unit (MICU)               2180-07-23 14:00:00
+##  2 Medical Intensive Care Unit (MICU)               2189-06-27 08:42:00
+##  3 Surgical Intensive Care Unit (SICU)              2157-11-20 19:18:02
+##  4 Medical/Surgical Intensive Care Unit (MICU/SICU) 2110-04-11 15:52:22
+##  5 Medical Intensive Care Unit (MICU)               2131-01-11 04:20:05
+##  6 Cardiac Vascular Intensive Care Unit (CVICU)     2160-05-18 10:00:53
+##  7 Coronary Care Unit (CCU)                         2129-08-04 12:45:00
+##  8 Trauma SICU (TSICU)                              2158-01-15 08:01:49
+##  9 Medical Intensive Care Unit (MICU)               2156-04-12 16:24:18
+## 10 Coronary Care Unit (CCU)                         2183-10-18 00:47:00
+##    outtime               los admittime           dischtime          
+##    &lt;dttm&gt;              &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;             
+##  1 2180-07-23 23:50:47 0.410 2180-07-23 12:35:00 2180-07-25 17:55:00
+##  2 2189-06-27 20:38:27 0.498 2189-06-27 07:38:00 2189-07-03 03:00:00
+##  3 2157-11-21 22:08:00 1.12  2157-11-18 22:56:00 2157-11-25 18:00:00
+##  4 2110-04-12 23:59:56 1.34  2110-04-11 15:08:00 2110-04-14 15:00:00
+##  5 2131-01-20 08:27:30 9.17  2131-01-07 20:39:00 2131-01-20 05:15:00
+##  6 2160-05-19 17:33:33 1.31  2160-05-18 07:45:00 2160-05-23 13:30:00
+##  7 2129-08-10 17:02:38 6.18  2129-08-04 12:44:00 2129-08-18 16:53:00
+##  8 2158-01-16 15:19:24 1.30  2158-01-15 08:00:00 2158-01-20 19:29:00
+##  9 2156-04-19 18:13:35 7.08  2156-04-12 14:16:00 2156-04-29 16:26:00
+## 10 2183-10-20 18:48:03 2.75  2183-10-17 23:20:00 2183-10-20 18:47:00
+##    deathtime           admission_type              admission_location    
+##    &lt;dttm&gt;              &lt;chr&gt;                       &lt;chr&gt;                 
+##  1 NA                  EW EMER.                    EMERGENCY ROOM        
+##  2 NA                  EW EMER.                    EMERGENCY ROOM        
+##  3 NA                  EW EMER.                    EMERGENCY ROOM        
+##  4 NA                  EW EMER.                    PACU                  
+##  5 2131-01-20 05:15:00 OBSERVATION ADMIT           EMERGENCY ROOM        
+##  6 NA                  SURGICAL SAME DAY ADMISSION PHYSICIAN REFERRAL    
+##  7 NA                  EW EMER.                    PROCEDURE SITE        
+##  8 NA                  EW EMER.                    EMERGENCY ROOM        
+##  9 NA                  EW EMER.                    EMERGENCY ROOM        
+## 10 NA                  EW EMER.                    TRANSFER FROM HOSPITAL
+##    discharge_location           insurance language marital_status
+##    &lt;chr&gt;                        &lt;chr&gt;     &lt;chr&gt;    &lt;chr&gt;         
+##  1 HOME                         Medicaid  ENGLISH  WIDOWED       
+##  2 HOME HEALTH CARE             Medicare  ENGLISH  MARRIED       
+##  3 HOME HEALTH CARE             Other     ?        MARRIED       
+##  4 HOME                         Other     ENGLISH  MARRIED       
+##  5 DIED                         Medicare  ENGLISH  MARRIED       
+##  6 HOME HEALTH CARE             Medicare  ENGLISH  SINGLE        
+##  7 CHRONIC/LONG TERM ACUTE CARE Other     ENGLISH  MARRIED       
+##  8 HOME                         Other     ENGLISH  &lt;NA&gt;          
+##  9 SKILLED NURSING FACILITY     Medicare  ENGLISH  WIDOWED       
+## 10 HOME                         Other     ENGLISH  SINGLE        
+##    ethnicity              edregtime           edouttime          
+##    &lt;chr&gt;                  &lt;dttm&gt;              &lt;dttm&gt;             
+##  1 WHITE                  2180-07-23 05:54:00 2180-07-23 14:00:00
+##  2 BLACK/AFRICAN AMERICAN 2189-06-27 06:25:00 2189-06-27 08:42:00
+##  3 WHITE                  2157-11-18 17:38:00 2157-11-19 01:24:00
+##  4 WHITE                  NA                  NA                 
+##  5 BLACK/AFRICAN AMERICAN 2131-01-07 13:36:00 2131-01-07 22:13:00
+##  6 OTHER                  NA                  NA                 
+##  7 WHITE                  2129-08-04 11:00:00 2129-08-04 12:35:00
+##  8 UNABLE TO OBTAIN       2158-01-15 06:49:00 2158-01-15 07:36:00
+##  9 WHITE                  2156-04-12 09:56:00 2156-04-12 17:11:00
+## 10 WHITE                  2183-10-17 22:11:00 2183-10-18 00:47:00
+##    hospital_expire_flag gender anchor_age anchor_year anchor_year_group dod  
+##                   &lt;dbl&gt; &lt;chr&gt;       &lt;dbl&gt;       &lt;dbl&gt; &lt;chr&gt;             &lt;lgl&gt;
+##  1                    0 F              52        2180 2014 - 2016       NA   
+##  2                    0 F              73        2186 2008 - 2010       NA   
+##  3                    0 F              55        2157 2011 - 2013       NA   
+##  4                    0 F              46        2110 2011 - 2013       NA   
+##  5                    1 F              68        2122 2008 - 2010       NA   
+##  6                    0 F              53        2156 2008 - 2010       NA   
+##  7                    0 F              80        2128 2008 - 2010       NA   
+##  8                    0 M              21        2158 2008 - 2010       NA   
+##  9                    0 F              80        2155 2011 - 2013       NA   
+## 10                    0 M              53        2183 2017 - 2019       NA   
+##    age_at_adm stay_id.x `Heart Rate` `Arterial Blood Pressure systolic`
+##         &lt;dbl&gt;     &lt;dbl&gt;        &lt;dbl&gt;                              &lt;dbl&gt;
+##  1         52  37529680           91                                 NA
+##  2         76  36742749           77                                 NA
+##  3         55  30327812           86                                 NA
+##  4         46  37542711           55                                 NA
+##  5         77  31832304           38                                 NA
+##  6         57  37106138           80                                134
+##  7         81  34599502           68                                115
+##  8         21  39908879          100                                 NA
+##  9         81  31956612          124                                 NA
+## 10         53  35217462           81                                 NA
+##    `Arterial Blood Pressure mean` `Non Invasive Blood Pressure systolic`
+##                             &lt;dbl&gt;                                  &lt;dbl&gt;
+##  1                             NA                                     84
+##  2                             NA                                    150
+##  3                             NA                                    151
+##  4                             NA                                     73
+##  5                             NA                                    180
+##  6                             94                                    104
+##  7                             82                                    126
+##  8                             NA                                    123
+##  9                             NA                                     87
+## 10                             NA                                    136
+##    `Non Invasive Blood Pressure mean` `Respiratory Rate`
+##                                 &lt;dbl&gt;              &lt;dbl&gt;
+##  1                                 56                 24
+##  2                                 92                 23
+##  3                                104                 18
+##  4                                 59                 19
+##  5                                 46                 10
+##  6                                 77                 14
+##  7                                 78                 18
+##  8                                 80                 29
+##  9                                 53                 25
+## 10                                 99                 23
+##    `Temperature Fahrenheit` stay_id.y
+##                       &lt;dbl&gt;     &lt;dbl&gt;
+##  1                     98.7  37529680
+##  2                     98    36742749
+##  3                     98.5  30327812
+##  4                     97.7  37542711
+##  5                     98.1  31832304
+##  6                     97.2  37106138
+##  7                     95.9  34599502
+##  8                     98.6  39908879
+##  9                    103.   31956612
+## 10                     96.7  35217462
+## # … with 49,961 more rows</code></pre>
+<p>Many intermediate data frames are no longer needed.</p>
+<pre class="r"><code>rm(full_icu_chart)
+rm(full_icu_labs)
+rm(full_icu_tibble)</code></pre>
+<p>The final step is determining whether the patient died within 30 days of hospital admission.</p>
+<pre class="r"><code>final_icu_data &lt;- final_icu_data %&gt;%
+  mutate(time_to_death = as.duration(deathtime - intime),
+         death_in_30 = ifelse(is.na(time_to_death) | time_to_death &gt; ddays(30), 
+                                    FALSE, TRUE)) %&gt;%
+  select(-time_to_death) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 49,971 x 48
+##    subject_id hadm_id Lactate Bicarbonate `Calcium, Total` Chloride Creatinine
+##         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt;            &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+##  1   10000032  2.91e7    NA            21              9.3      102        0.5
+##  2   10000980  2.69e7    NA            23              9.2      103        2.2
+##  3   10001217  2.46e7    NA            23              8.2      104        0.4
+##  4   10001725  2.56e7    NA            24              9.1      106        0.8
+##  5   10001884  2.62e7     1.5          33              9.8       96        1.1
+##  6   10002013  2.36e7     3.3          23             NA        109        1.1
+##  7   10002155  2.38e7    NA            25              8.8      106        0.9
+##  8   10002223  2.25e7    NA            26              8.7      102        0.8
+##  9   10002428  2.87e7     1.6          20              7.4       98        0.8
+## 10   10002443  2.13e7     1.7          20              7.6      101        0.8
+## # … with 49,961 more rows, and 41 more variables: Glucose &lt;dbl&gt;,
+## #   Magnesium &lt;dbl&gt;, Potassium &lt;dbl&gt;, Sodium &lt;dbl&gt;, Hematocrit &lt;dbl&gt;, `White
+## #   Blood Cells` &lt;dbl&gt;, stay_id &lt;dbl&gt;, first_careunit &lt;chr&gt;,
+## #   last_careunit &lt;chr&gt;, intime &lt;dttm&gt;, outtime &lt;dttm&gt;, los &lt;dbl&gt;,
+## #   admittime &lt;dttm&gt;, dischtime &lt;dttm&gt;, deathtime &lt;dttm&gt;, admission_type &lt;chr&gt;,
+## #   admission_location &lt;chr&gt;, discharge_location &lt;chr&gt;, insurance &lt;chr&gt;,
+## #   language &lt;chr&gt;, marital_status &lt;chr&gt;, ethnicity &lt;chr&gt;, edregtime &lt;dttm&gt;,
+## #   edouttime &lt;dttm&gt;, hospital_expire_flag &lt;dbl&gt;, gender &lt;chr&gt;,
+## #   anchor_age &lt;dbl&gt;, anchor_year &lt;dbl&gt;, anchor_year_group &lt;chr&gt;, dod &lt;lgl&gt;,
+## #   age_at_adm &lt;dbl&gt;, stay_id.x &lt;dbl&gt;, `Heart Rate` &lt;dbl&gt;, `Arterial Blood
+## #   Pressure systolic` &lt;dbl&gt;, `Arterial Blood Pressure mean` &lt;dbl&gt;, `Non
+## #   Invasive Blood Pressure systolic` &lt;dbl&gt;, `Non Invasive Blood Pressure
+## #   mean` &lt;dbl&gt;, `Respiratory Rate` &lt;dbl&gt;, `Temperature Fahrenheit` &lt;dbl&gt;,
+## #   stay_id.y &lt;dbl&gt;, death_in_30 &lt;lgl&gt;</code></pre>
+<p>How many people die within 30 days?</p>
+<pre class="r"><code>final_icu_data %&gt;%
+  filter(death_in_30) %&gt;%
+  count()</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##       n
+##   &lt;int&gt;
+## 1  4974</code></pre>
+<p>How many die, but after 30 days?</p>
+<pre class="r"><code>final_icu_data %&gt;%
+  filter(!is.na(deathtime) &amp; !death_in_30) %&gt;%
+  count()</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##       n
+##   &lt;int&gt;
+## 1   201</code></pre>
+<p>201 people die after the 30 day mark.</p>
+</div>
 </div>
 
 

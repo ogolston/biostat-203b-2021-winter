@@ -489,6 +489,8 @@ Can uncomment the below code to read in the data.
 ```
 
 
+
+
 Since memory is an issue, I remove unnecessary data from the environment, such as the full lab codes dictionary and the demonstration data frames for creatinine.
 ```{r}
 rm(labcodes)
@@ -582,9 +584,14 @@ if(!file.exists("chartevents_filtered.csv.gz")) {
 } 
 ```
 
-Can uncomment the below code to read this in.
+Can uncomment the below code to read this in. 
 ```{r eval = F}
 #chart_events <- fread("chartevents_filtered.csv.gz", nThread = 1)
+```
+
+This code chunk has a reduced file that I will create in Q8. 
+```{r}
+chart_events <- fread("chartevents_filtered_icustays.csv.gz", nThread = 1)
 ```
 
 
@@ -757,5 +764,17 @@ final_icu_data <- final_icu_data %>%
   print()
 ```
 
-## TODO 
-Finish up by doing the indicator variable for death
+How many people die within 30 days?
+```{r}
+final_icu_data %>%
+  filter(death_in_30) %>%
+  count()
+```
+
+How many die, but after 30 days?
+```{r}
+final_icu_data %>%
+  filter(!is.na(deathtime) & !death_in_30) %>%
+  count()
+```
+201 people die after the 30 day mark. 
