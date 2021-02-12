@@ -74,6 +74,18 @@ fread    | `r time3[3]`
 `read.csv` seems to be the slowest, by far. `read_csv` and `fread` are similar, but `fread` tends to be a slight bit faster.
 
 
+Memory is an issue for this assignment, so these variables are removed from the environment.
+```{r}
+rm(file1)
+rm(file2)
+rm(file3)
+
+rm(time1)
+rm(time2)
+rm(time3)
+```
+
+
 ## Q3. ICU stays
 
 `icustays.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/icustays/>) contains data about Intensive Care Units (ICU) stays. Summarize following variables using appropriate numerics or graphs:   
@@ -475,6 +487,15 @@ Can uncomment the below code to read in the data.
 ```{r eval = F}
 #labs <- fread("labevents_filtered.csv.gz", nThread = 1)
 ```
+
+
+Since memory is an issue, I remove unnecessary data from the environment, such as the full lab codes dictionary and the demonstration data frames for creatinine.
+```{r}
+rm(labcodes)
+rm(creatinine_items)
+rm(creatinine_ids)
+```
+
 ## Q7. Vitals from chartered events
 
 We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate. Find the `itemid`s of these vitals from `d_items.csv.gz` and retrieve a subset of `chartevents.csv.gz` only containing these items.
@@ -576,7 +597,7 @@ chart_events %>%
 
 The codes are: 220045, 220050, 220052, 220179, 220181, 220210, 223761.
 
-I want to see what these correspond to.
+I want to see what these correspond to and save the results.
 ```{r}
 chart_ids <- chart_codes %>%
   filter(itemid %in% c("220045", "220050", "220052", 
@@ -584,6 +605,13 @@ chart_ids <- chart_codes %>%
   select(itemid, label) %>%
   print()
 
+```
+
+
+Remove unnecessary data from environment:
+```{r}
+rm(chart_codes)
+rm(measurements)
 ```
 
 ## Q8. Putting things together
@@ -666,6 +694,10 @@ full_icu_labs <- labs %>%
   print()
 ```
 
+```{r}
+rm(labs)
+```
+
 We'll follow a similar pattern for chart events. First, it's convenient to save a version with only adults in the ICU data.
 ```{r}
 if(!file.exists("chartevents_filtered_icustays.csv.gz")) {
@@ -695,6 +727,9 @@ full_icu_chart <- chart_events %>%
   ungroup() %>%
   rename_at(vars(as.character(chart_ids$itemid)), ~chart_ids$label) %>%
   print()
+
+
+rm(chart_events)
 ```
 
 Left join by all matching variables in the data, since they should match between the two datasets.
@@ -704,7 +739,23 @@ final_icu_data <- full_icu_labs %>%
   print(width = Inf)
 ```
 
+Many intermediate data frames are no longer needed.
+```{r}
+rm(full_icu_chart)
+rm(full_icu_labs)
+rm(full_icu_tibble)
+```
+
+
+The final step is determining whether the patient died within 30 days of hospital admission.
+```{r}
+final_icu_data <- final_icu_data %>%
+  mutate(time_to_death = as.duration(deathtime - intime),
+         death_in_30 = ifelse(is.na(time_to_death) | time_to_death > ddays(30), 
+                                    FALSE, TRUE)) %>%
+  select(-time_to_death) %>%
+  print()
+```
 
 ## TODO 
 Finish up by doing the indicator variable for death
-And changing the names of columns 
