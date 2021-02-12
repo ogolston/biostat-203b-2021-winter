@@ -616,31 +616,34 @@ rm(time3)</code></pre>
   distinct(stay_id) %&gt;%
   nrow()</code></pre>
 <pre><code>## [1] 69619</code></pre>
-<p>There are 69619 unique <code>stay_id</code> values. This is equal to the number of observations in the original dataset, as each observation has been assigned a unique <code>stay_id</code> value.</p>
+<p>There are 69,619 unique <code>stay_id</code> values. This is equal to the number of observations in the original data set, because each observation has been assigned a unique <code>stay_id</code> value.</p>
 <p>Check number of unique <code>subject_id</code> values:</p>
 <pre class="r"><code>icu_stays %&gt;%
   distinct(subject_id) %&gt;%
   nrow()</code></pre>
 <pre><code>## [1] 50048</code></pre>
-<p>There are 50048 unique <code>subject_id</code> values. This is less than the total number of observations, which means that some individuals have had multiple ICU stays, and are thus present two or more times.</p>
+<p>There are 50048 unique <code>subject_id</code> values. This is less than the total number of observations, which means that some individuals have had multiple ICU stays, and are present two or more times in the data.</p>
 <pre class="r"><code>icu_stays %&gt;%
   count(subject_id) %&gt;%
-  arrange(desc(n)) </code></pre>
-<pre><code>## # A tibble: 50,048 x 2
-##    subject_id     n
-##         &lt;dbl&gt; &lt;int&gt;
-##  1   18358138    33
-##  2   13269859    30
-##  3   17585185    29
-##  4   12468016    26
-##  5   18676703    25
-##  6   11281568    24
-##  7   15455517    23
-##  8   15573773    23
-##  9   17517983    22
-## 10   17937834    22
-## # … with 50,038 more rows</code></pre>
-<p>One patient has had 33 ICU stays!</p>
+  select(number_of_stays = n) %&gt;%
+  count(number_of_stays) %&gt;%
+  arrange(desc(n)) %&gt;% 
+  print(print_max = Inf)</code></pre>
+<pre><code>## # A tibble: 28 x 2
+##    number_of_stays     n
+##              &lt;int&gt; &lt;int&gt;
+##  1               1 38918
+##  2               2  7200
+##  3               3  2174
+##  4               4   839
+##  5               5   381
+##  6               6   189
+##  7               7   106
+##  8               8    76
+##  9               9    44
+## 10              10    36
+## # … with 18 more rows</code></pre>
+<p>The vast majority of patients have only 1, 2, or 3 stays. However, one patient has had 33 ICU stays!</p>
 <p>Visualize length of stay. In the initially plot, it appeared that the mass of observations had short stays (less than 30 days), but there were a few extreme outlying values.</p>
 <pre class="r"><code>icu_stays %&gt;%
   filter(los &gt;= 50) %&gt;%
@@ -1665,7 +1668,8 @@ rm(full_icu_tibble)</code></pre>
 ##       n
 ##   &lt;int&gt;
 ## 1  4974</code></pre>
-<p>How many die, but after 30 days?</p>
+<p>Of the 49,971 admissions, 4974 individuals die within 30 days.</p>
+<p>How many patients die, but after 30 days?</p>
 <pre class="r"><code>final_icu_data %&gt;%
   filter(!is.na(deathtime) &amp; !death_in_30) %&gt;%
   count()</code></pre>

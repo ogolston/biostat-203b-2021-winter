@@ -112,7 +112,7 @@ icu_stays %>%
   distinct(stay_id) %>%
   nrow()
 ```
-There are 69619 unique `stay_id` values. This is equal to the number of observations in the original dataset, as each observation has been assigned a unique `stay_id` value.  
+There are 69,619 unique `stay_id` values. This is equal to the number of observations in the original data set, because each observation has been assigned a unique `stay_id` value.  
 
 
 Check number of unique `subject_id` values:
@@ -120,19 +120,22 @@ Check number of unique `subject_id` values:
 icu_stays %>%
   distinct(subject_id) %>%
   nrow()
-
 ```
-There are 50048 unique `subject_id` values. This is less than the total number of observations, which means that some individuals have had multiple ICU stays, and are thus present two or more times. 
+There are 50048 unique `subject_id` values. This is less than the total number of observations, which means that some individuals have had multiple ICU stays, and are present two or more times in the data.  
 
 ```{r}
 icu_stays %>%
   count(subject_id) %>%
-  arrange(desc(n)) 
+  rename(number_of_stays = n) %>%
+  count(number_of_stays) %>% 
+  rename(number_of_patients = n) %>%
+  arrange(desc(number_of_stays)) %>% 
+  print()
 ```
-One patient has had 33 ICU stays!
+One patient has had 33 ICU stays! However, the majority of patients have a count of 1, 2, or 3 stays.
 
 
-Visualize length of stay. In the initially plot, it appeared that the mass of observations had short stays (less than 30 days), but there were a few extreme outlying values. 
+Visualize length of stay, which is coded as the the `los` variable. In my initial plot, it appeared that the mass of observations had short stays (less than 30 days), but there were a few extreme outlying values that made the plot hard to interpret. I want to see how common these long stays are. 
 ```{r}
 icu_stays %>%
   filter(los >= 50) %>%
@@ -141,13 +144,14 @@ icu_stays %>%
 ```
 Out of over 69,000 observations, only 112 had stays of 50 days or longer, and only 11 had stays of 100 days or longer. 
 
-To make the graph more interpretable, these outlying values are excluded. 
+To make the graph more interpretable, I decided to exclude these outlying values. They should not be forgotten, but do not represent a typical ICU stay. 
 ```{r}
 icu_stays %>%
   ggplot(aes(x = los)) +
   geom_histogram(binwidth = .5) +
   coord_cartesian(xlim = c(0,50)) +
-  labs(title = "Length of Stay", x = "Length of Stay (days)")
+  labs(title = "Distribution of Length of Stay (extreme values excluded)", 
+       x = "Length of Stay (days)")
 ```
 It appears that most people stay in the ICU for less than 5 days, and very few stay beyond 10. 
 
@@ -770,8 +774,10 @@ final_icu_data %>%
   filter(death_in_30) %>%
   count()
 ```
+Of the 49,971 admissions, 4974 individuals die within 30 days. 
 
-How many die, but after 30 days?
+
+How many patients die, but after 30 days?
 ```{r}
 final_icu_data %>%
   filter(!is.na(deathtime) & !death_in_30) %>%
