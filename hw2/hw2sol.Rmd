@@ -176,7 +176,18 @@ icu_stays %>%
 ```
 
 
-
+I'm curious how first unit differs from last care unit, so I plot the counts side by side. 
+```{r}
+icu_stays %>%
+  pivot_longer(cols = c(first_careunit, last_careunit), 
+               names_to = "stage",
+               values_to = "unit") %>%
+  ggplot() +
+  geom_bar(aes(x = unit, fill = stage), position = "dodge") +
+  coord_flip() +
+  labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay")
+```
+There aren't any major differences. It does seem like 
 
 
 
