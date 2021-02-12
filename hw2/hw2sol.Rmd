@@ -374,6 +374,19 @@ There is a huge spike at 0, and then no observations until ~age 18. Thus, my bes
 
 We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
 
+### Solution
+This question was tricky, since the `labevents.csv.gz` file is so large.
+```{bash eval = F}
+zcat /usr/203b-data/mimic-iv/hosp/labevents.csv.gz | wc -l
+```
+The file has 122,289,829 lines. Trying to read this in caused RStudio to crash. Thus, a filtered version of the file was created by Dr. Zhou. 
+
+
+```{bash eval = F}
+zcat /usr/203b-data/mimic-iv-derived-data/labevents_filtered_itemid.csv.gz | 
+  wc -l
+```
+This filtered file has 30,773,355 lines.
 
 ```{r eval = F}
 temp_path <- "/usr/203b-data/mimic-iv-derived-data"
@@ -424,6 +437,20 @@ We are interested in the vitals for ICU patients: heart rate, mean and systolic 
 `d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `itemid` in `chartevents.csv.gz`. 
 
 ### Solution
+
+As with `labevents.csv.gz`, the `chartevents.csv.gz` file is massive. 
+```{bash eval = F}
+zcat /usr/203b-data/mimic-iv/icu/chartevents.csv.gz | wc -l
+```
+The original file has 327,363,275 lines and can not be read into RStudio easily. Thus, a filtered version of the file was created by Dr. Zhou. 
+
+
+```{bash eval = F}
+zcat /usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz | 
+  wc -l
+```
+The filtered file has 30,095,996 lines and is easier to work with.
+
 
 ```{r}
 chart_key <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
