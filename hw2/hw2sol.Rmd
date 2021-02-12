@@ -424,13 +424,22 @@ top_creatinine_id <- labs %>%
   print()
 ```
 
-This process could be repeated for the other requested lab items. Dr. Zhou provided the `itemids` for the all measurements. Finally, the labs file can be filtered down to only these measurements of interest.
-```{r eval=F}
-labs <- labs %>%
+This process could be repeated for the other requested lab items. Dr. Zhou provided the `itemids` for the all measurements. These can be used to filter down the `labcodes` frame.
+```{r}
+lab_ids <- labcodes %>%
   filter(itemid %in% c("50912", "50971", "50983", "50902", "50882", "51221", 
                       "51301", "50931", "50960", "50893", "50813")) %>%
+  select(itemid, label) %>%
   print()
 
+```
+
+
+Finally, the `labs` data can be filtered down to only these measurements of interest.
+```{r eval=F}
+labs <- labs %>%
+  filter(itemid %in% lab_ids$itemid) %>%
+  print()
 ```
 
 
@@ -557,6 +566,26 @@ Can uncomment the below code to read this in.
 #chart_events <- fread("chartevents_filtered.csv.gz", nThread = 1)
 ```
 
+
+I want to see what codes Dr. Zhou selected. 
+```{r}
+chart_events %>%
+  group_by(itemid) %>%
+  count()
+```
+
+The codes are: 220045, 220050, 220052, 220179, 220181, 220210, 223761.
+
+I want to see what these correspond to.
+```{r}
+chart_ids <- chart_codes %>%
+  filter(itemid %in% c("220045", "220050", "220052", 
+                       "220179", "220181", "220210", "223761")) %>%
+  select(itemid, label) %>%
+  print()
+
+```
+
 ## Q8. Putting things together
 
 Let us create a tibble for all ICU stays, where rows are  
@@ -633,7 +662,7 @@ full_icu_labs <- labs %>%
   spread(key = itemid, value = valuenum) %>%
   right_join(full_icu_tibble, by = c("subject_id", "hadm_id")) %>%
   ungroup() %>%
-  #rename_at(vars(as.character(labcodes$itemid)), ~labcodes$label) %>%
+  rename_at(vars(as.character(lab_ids$itemid)), ~lab_ids$label) %>%
   print()
 ```
 
@@ -664,7 +693,7 @@ full_icu_chart <- chart_events %>%
   spread(key = itemid, value = valuenum) %>%
   right_join(full_icu_tibble, by = c("subject_id", "hadm_id")) %>%
   ungroup() %>%
-  #rename_at(vars(as.character(labcodes$itemid)), ~labcodes$label) %>%
+  rename_at(vars(as.character(chart_ids$itemid)), ~chart_ids$label) %>%
   print()
 ```
 
