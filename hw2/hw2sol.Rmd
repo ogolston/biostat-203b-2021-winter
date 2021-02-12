@@ -668,7 +668,7 @@ full_icu_chart <- chart_events %>%
   print()
 ```
 
-Let join by all matching variables in the data, since they should match between the two datasets.
+Left join by all matching variables in the data, since they should match between the two datasets.
 ```{r} 
 final_icu_data <- full_icu_labs %>%
   left_join(full_icu_chart) %>% 
