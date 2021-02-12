@@ -185,9 +185,10 @@ icu_stays %>%
   ggplot() +
   geom_bar(aes(x = unit, fill = stage), position = "dodge") +
   coord_flip() +
-  labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay")
+  labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay") +
+  scale_fill_manual(values = c("#95b8fc", "#ff948d"))
 ```
-There aren't any major differences. It does seem like 
+There aren't any major differences, though one trend is that neuro patients seem to be more likely to be admitted to the Neuro SICU and then released from Neuro stepdown or Neuro intermediate. 
 
 
 
@@ -214,152 +215,218 @@ Information of the patients admitted into hospital is available in `ADMISSION.cs
 Note it is possible that one patient (uniquely identified by the `SUBJECT_ID`) is admitted into hospital multiple times. When summarizing some demographic information, it makes sense to summarize based on unique patients. 
 
 ### Solution
-First, we need to read in the admissions data. This dataset will have all admissions.
-```{r}
+First, we need to read in the admissions data. This dataset will have all admissions:
+```{r message = FALSE}
 admissions <- read_csv(str_c(mimic_path, "/core/admissions.csv.gz")) 
 
 admissions %>%
-  print()
+  print()  
 ``` 
+There are 524,520 admissions.
 
-We also want a filtered version of the data that only contains unique patients, as identified by subject_id.
+
+We also want a filtered version of the data that only contains unique patients, as identified by `subject_id`.
 ```{r}
 admissions_unique <- admissions %>%
   distinct(subject_id, .keep_all = TRUE) 
 
 admissions_unique %>% 
-  print()
+  nrow()
 ```
+Though there were 524,520 admissions, there are only 257,366 unique patients in the data. 
 
 
-- admission year  
+#### Admission year  
 ```{r}
 ggplot(data = admissions) +
-  geom_bar(aes(year(admittime)))
+  geom_bar(aes(year(admittime))) +
+  labs(x = "Year", title = "Year of Admission")
 ```
+These admission times are all in the future! This is because the date information is shifted for each patient, to protect their privacy. 
 
 
-- admission month  
+#### Admission month  
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(month(admittime, label = T))) +
   labs(title = "Admissions by Month", x = "Month")
 ```
+The admissions per month seem concordant with the number of days in each month. For example, it makes sense that February has the least admissions, as it has only 28 days. Similarly, there is a small dip for the months with 30 days. 
 
 
-
-- admission month day 
+#### Admission month day 
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(day(admittime))) +
   labs(title = "Admissions by Day of Month", x = "Day of Month")
 ```
+Admissions are pretty consistent throughout the month, with the exception of a dropoff for the 29th, 30th, and 31st days of the month. This is simply because some months have only 28 or 30 days, rather than 31.
 
+Strangely, it looks like there is a small dip on the 13th of the month. I would guess that superstition about the number 13 is causing some people to avoid scheduling procedures on that day.
 
-- admission week day  
+#### Admission week day  
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(wday(admittime, label = T))) +
   labs(title = "Admissions by Day of Week", x = "Day of Week")
 ```
+It looks like admissions are consistent throughout the week. 
 
-- admission hour (anything unusual?)  
+
+#### Admission hour   
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(hour(admittime))) +
   labs(title = "Admissions by Hour", x = "Hour")
 ```
+The pattern for admission time is a bit hard to understand. There are a lot of admissions at 8:00 a.m. (perhaps checking in for a procedure that day), followed by a drop-off. Then, admissions rise throughout the day and peak at around 6:00 p.m., before dropping off. However, there is a huge peak at midnight, which seems unusual. I'm guessing this may be due to some hospitals using midnight as a value when the true admission time is not recorded.
 
-- number of deaths in each year  
+
+#### Number of deaths in each year  
 ```{r}
 admissions %>%
   filter(!is.na(deathtime)) %>%
   ggplot() +
-  geom_bar(aes(year(deathtime)))
+  geom_bar(aes(year(deathtime))) + 
+  labs(title = "Number of Deaths by Year", x = "Year")
 ```
+The shape roughly matches the pattern seen in the admissions by year plot, but there is more year-to-year fluctuation.
 
-
-
-- admission type  
+#### Admission type  
 ```{r}
 admissions %>%
   ggplot() +
   geom_bar(aes(admission_type)) +
   coord_flip() +
-  labs(x = "Admissions Type")
+  labs(title = "Admission Type", x = "Admission Type")
 ```
+The most common code is `EW EMER`, which likely corresponds to some sort of emergency admission. 
 
-- number of admissions per patient  
+#### Number of admissions per patient  
 ```{r}
 admissions %>%
   count(subject_id) %>%
   ggplot() +
-  geom_bar(aes(n)) 
+  geom_bar(aes(n)) + 
+  labs(title = "Number of Admissions per Patient", x = "Number of Admissions", 
+       y = "Number of Patients")
+```
+It's clear that the vast majority of patients have very few admissions, but there are outliers that are making the plot harder to read. 
+
+To manually inspect: 
+```{r}
+admissions %>%
+  count(subject_id) %>%
+  rename(number_of_stays = n) %>%
+  count(number_of_stays) %>% 
+  rename(number_of_patients = n) %>%
+  arrange(desc(number_of_stays)) %>% 
+  print()
+```
+One patient has 238 admissions!! No wonder the plot looks so terrible. On the other end of the spectrum, 171439 patients have only 1 admission. It may make sense to plot the "typical" values and the "outliers" separately.
+
+
+```{r}
+admissions %>%
+  count(subject_id) %>%
+  filter(n <= 25) %>%
+  ggplot() +
+  geom_bar(aes(n)) + 
+  labs(title = "Number of Admissions per Patient (outliers removed)", 
+       x = "Number of Admissions", 
+       y = "Number of Patients")
 ```
 
 
-- admission location  
+```{r}
+admissions %>%
+  count(subject_id) %>%
+  filter(n > 25) %>%
+  ggplot() +
+  geom_bar(aes(n)) + 
+  labs(title = "Number of Admissions for Frequent Patients", x = "Number of Admissions", 
+       y = "Number of Patients")
+```
+Even among the "frequent fliers", having more than 100 admissions is extremely rare.
+
+#### Admission location  
 ```{r}
 admissions %>%
   ggplot() +
   geom_bar(aes(admission_location)) +
   coord_flip() +
-  labs(x = "Admission Location")
+  labs(title = "Admission Location", x = "Admission Location")
 ```
+Emergency room admissions are most common, followed by physician referrals. For a few patients, this information is not available (`NA` or `Information not Available`).
 
-
-- discharge location  
+#### Discharge location  
 ```{r}
 admissions %>%
   ggplot() +
   geom_bar(aes(discharge_location)) +
   coord_flip() +
-  labs(x = "Discharge Location")
+  labs(x = "Discharge Location", x = "Discharge Location")
 ```
+Most patients get discharged to their home. However, there is a large number of `NA` values. I'm assuming this means the information was not known/recorded for those patients, but I'm not sure.
 
 
-- insurance  
+
+#### Insurance  
+```{r}
+admissions_unique %>% 
+  ggplot(aes(x = factor(1), fill = insurance)) +
+  geom_bar(width=1) +
+  coord_polar("y") +
+  labs(title = "Insurance Type of Unique Patients", x = NULL)
+```
+The majority of unique patients have non-Medicare, non-Medicaid insurance. Among the patients who do have Medicare/Medicaid, Medicare appears to be ~3 times more common.  
+
+
+#### Language  
+```{r}
+admissions_unique %>% 
+  ggplot(aes(x = factor(1), fill = language)) +
+  geom_bar(width=1) +
+  coord_polar("y") +
+  labs(title = "Language of Unique Patients", x = NULL) + 
+  scale_fill_manual(values = c("#b3669e", "#60aeb2")) 
+```
+This isn't overly informative - most patients have English listed as their language. The remaining patients have `?` - it's ambiguous if this is the coding for "language other than English" or if it could also mean "unknown."
+
+
+#### Marital status
 ```{r}
 admissions_unique %>% 
   ggplot() +
-  geom_bar(aes(insurance))
+  geom_bar(aes(marital_status)) + 
+  labs(title = "Marital Status of Unique Patients", x = "Marital Status")
 ```
+Married and Single are the most common statuses, but there are also a lot of `NA` values. 
 
-
-
-- language  
-```{r}
-admissions_unique %>% 
-  ggplot() +
-  geom_bar(aes(language))
-```
-
-- martial status
-```{r}
-admissions_unique %>% 
-  ggplot() +
-  geom_bar(aes(marital_status))
-
-```
-
-- ethnicity  
+#### Ethnicity  
 ```{r}
 admissions_unique %>% 
   ggplot() +
   geom_bar(aes(ethnicity)) +
-  coord_flip()
+  coord_flip() + 
+  labs(title = "Ethnicity of Unique Patients", x = "Ethnicity")
 ```
+The most common ethnicity is White, followed by Black/African American.
 
-- death 
+#### Death 
 ```{r}
 admissions %>% 
   group_by(subject_id) %>%
   count(died = sum(!(is.na(deathtime))) > 0) %>%
-  ggplot() +
-  geom_bar(aes(died))
-
-colnames(admissions_unique)
+  ggplot(aes(x = factor(1), fill = died)) +
+  geom_bar(width = 1) +
+  coord_polar("y") +
+  labs(title = "Proportion of Unique Patients who Died", x = NULL) +
+  scale_fill_manual(values = c("#6691b4", "#d68bd5")) 
 ```
+It's of interest which proportion of unique patients died at some point in the data. We can do this by seeing whether each patient ever has a non-NA `deathtime`. Fortunately, the vast majority of patients are not recorded as having died during any of their admissions.
+
+
 
 ## Q5. `patient` data
 
