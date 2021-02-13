@@ -36,8 +36,8 @@ system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 ```
 
 
-## Note  
-As with many of my classmates, I've had issues with the teaching server while working on this assignment. Particularly for Questions 6-8, I wasn't able to do as much testing and troubleshooting as I would have liked, due to frequent crashes and loss of environmental variables. 
+### Note  
+As with many of my classmates, I had a lot of issues with the teaching server while working on this assignment. Particularly for Questions 6-8, I wasn't able to do as much testing and troubleshooting as I would have liked, due to very frequent crashes (and loss of environmental variables each time). 
 
 ## Q1. PhysioNet credential
 
@@ -45,6 +45,7 @@ At this moment, you should already get credentialed on the PhysioNet. Please inc
 
 ### Solution
 
+Here is my Data Use Agreement: 
 ![Screenshot of data use agreement](agreement.png)
 
 
@@ -151,7 +152,8 @@ icu_stays %>%
 ```
 Out of over 69,000 observations, only 112 had stays of 50 days or longer, and only 11 had stays of 100 days or longer. 
 
-To make the graph more interpretable, I decided to exclude these outlying values in the plot. Though they should not be ignored, they do not represent a typical ICU stay. 
+To make the graph more interpretable, I decided to exclude these outlying values in the plot. Though they should not be ignored, they do not represent a typical ICU stay.  
+
 ```{r}
 icu_stays %>%
   ggplot(aes(x = los)) +
@@ -160,6 +162,7 @@ icu_stays %>%
   labs(title = "Distribution of Length of Stay (outliers excluded)", 
        x = "Length of Stay (days)")
 ```
+    
 It appears that most people stay in the ICU for less than 5 days, and very few stay beyond 10. 
 
 
@@ -181,7 +184,8 @@ icu_stays %>%
   labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay")
 ```
 
-I'm curious how the distribution of first care units differs from last care unit, so I plot the counts side by side. 
+I'm curious how the distribution of first care units differs from last care unit, so I plot the counts at both time points side-by-side.    
+     
 ```{r}
 icu_stays %>%
   pivot_longer(cols = c(first_careunit, last_careunit), 
@@ -193,6 +197,7 @@ icu_stays %>%
   labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay") +
   scale_fill_manual(values = c("#95b8fc", "#ff948d"))
 ```
+      
 There aren't any major differences, though one trend is that neuro patients seem to be more likely to be admitted to the Neuro SICU and then released from Neuro stepdown or Neuro intermediate. 
 
 
@@ -371,7 +376,7 @@ admissions %>%
   labs(title = "Admission Location", x = "Admission Location")
 ```
     
-Emergency room admissions are most common, followed by physician referrals. For a few patients, this information is not available (`NA` or `Information not Available`).
+Emergency room admissions are most common, followed by physician referrals. For a few patients, this information is not available (`NA` or `Information not Available`). 
 
 #### Discharge location    
 ```{r}
@@ -379,11 +384,10 @@ admissions %>%
   ggplot() +
   geom_bar(aes(discharge_location)) +
   coord_flip() +
-  labs(x = "Discharge Location", x = "Discharge Location")
+  labs(title = "Discharge Location", x = "Discharge Location")
 ```
     
-Most patients get discharged to their home. However, there is a large number of `NA` values. I'm assuming this means the information was not known/recorded for those patients, but I'm not sure.
-
+Most patients get discharged to their home. However, there is also a very large number of `NA` values. I'm curious if there's a systemic reason for those values. 
 
 
 #### Insurance    
@@ -411,16 +415,19 @@ admissions_unique %>%
 This isn't overly informative - most patients have English listed as their language. The remaining patients have `?` - it's ambiguous if this is the coding for "language other than English" or if it could also mean "unknown."
 
 
-#### Marital status
+#### Marital status  
+
 ```{r}
 admissions_unique %>% 
   ggplot() +
   geom_bar(aes(marital_status)) + 
   labs(title = "Marital Status of Unique Patients", x = "Marital Status")
 ```
+    
 Married and Single are the most common statuses, but there are also a lot of `NA` values. 
 
 #### Ethnicity  
+
 ```{r}
 admissions_unique %>% 
   ggplot() +
@@ -428,9 +435,11 @@ admissions_unique %>%
   coord_flip() + 
   labs(title = "Ethnicity of Unique Patients", x = "Ethnicity")
 ```
+    
 The most common ethnicity is White, followed by Black/African American.
 
-#### Death 
+#### Death  
+
 ```{r}
 admissions %>% 
   group_by(subject_id) %>%
@@ -441,7 +450,8 @@ admissions %>%
   labs(title = "Proportion of Unique Patients who Died", x = NULL) +
   scale_fill_manual(values = c("#6691b4", "#d68bd5")) 
 ```
-It's of interest which proportion of unique patients died at some point in the data. We can do this by seeing whether each patient ever has a non-NA `deathtime`. Fortunately, the vast majority of patients are not recorded as having died during any of their admissions.
+      
+Fortunately, the vast majority of patients are not recorded as having died during any of their admissions.
 
 
 
@@ -467,22 +477,23 @@ patients %>%
 ```{r}
 patients %>%
   ggplot(aes(x = factor(1), fill = gender)) +
-    geom_bar(width=1) +
-    coord_polar("y") +
-    labs(x = "Gender")
+  geom_bar(width=1) +
+  coord_polar("y") +
+  labs(x = "Gender")
 ```
     
-I would have expected a 50/50 split, but there are acutally more women than men. Perhaps childbirth and pregnancy-related visits are part of the explanation.
+I would have expected a 50/50 split, but there are more women admitted than men. Perhaps childbirth and pregnancy-related visits are part of the explanation.
 
 
 #### Anchor Age  
 ```{r}
 patients %>%
   ggplot() +
-  geom_bar(aes(anchor_age)) 
+  geom_bar(aes(anchor_age)) +
+  labs(title = "Anchor Age Values", x = "Anchor Age (years)")
 ```
     
-There is a huge spike at 0, and then no observations until age 18. I have two theories: one is that the age of minors is not recorded, to protect privacy. Instead, they might be coded as having age "0." After age 18, the ages appear to be coded as normal. The other theory is that "0" is a placeholder value, for when age is not known/recorded. There is also another spike at the upper end, at 91 years old. Perhaps this is the maximium value that they record, so anyone aged 91+ is coded as being 91. 
+There is a huge spike at 0, and then no observations until age 18. I have two theories: one is that the age of minors is not recorded, to protect privacy. Instead, they might be coded as having age "0." After age 18, the ages appear to be coded as normal. The other theory is that the data only contains adults, but "0" represents unknown/unavailable values.There is also another spike at the upper end, at 91 years old. I suspect that anyone aged 91+ is coded as being 91, for some reason. 
 
 I'm curious about the people with age coded as 0 so decided to look at admissions data for those individuals.
 ```{r}
@@ -493,8 +504,7 @@ ids <- patients %>%
   
 
 age_0 <- admissions %>%
-  filter(subject_id %in% ids) %>%
-  print()
+  filter(subject_id %in% ids)
 
 age_0 %>% 
   count(marital_status, admission_location, admission_type) %>%
@@ -503,7 +513,7 @@ age_0 %>%
 rm(age_0)
 ```
 
-The majority of people with age 0 are elective admissions who are missing some other pieces of chart information (admission location and marital status). I'm guessing there is a systemic reason for this, such as differences in record keeping for elective admissions, so my theory about them being pediatric patients is probably not correct.
+The majority of people with age 0 are `ELECTIVE` admissions who are missing some other pieces of chart information (admission location and marital status). I'm guessing there is a systemic reason for this, such as differences in record keeping for elective admissions. My theory about them being pediatric patients is probably not correct.
  
 
 ## Q6. Lab results
@@ -527,7 +537,7 @@ zcat /usr/203b-data/mimic-iv-derived-data/labevents_filtered_itemid.csv.gz |
 This filtered file has 30,773,355 lines and contains only the variables of interest. However, even this file ended up being difficult to work with.
 
 
-#### The process I would have used
+#### The process I would have used for this problem
 Due to the technical issues described above, it was not possible to complete the problem as originally assigned. However, below is the code that could have been used to find the `itemids` for the lab measurements of interest, and to filter the data to contain only those measurements. 
 
 First, load the dictionary file, which has information about the various lab measurements:
@@ -562,7 +572,7 @@ top_creatinine_id <- labs %>%
   print()
 ```
 
-This process could be repeated for the other requested lab items. Since the full `labevents` file could not be read in easily to do the above process, Dr. Zhou provided the most frequently used `itemid` for the measurements. These are displayed below:
+This process could be repeated for the other requested lab items. However, since the full `labevents` file could not be read in easily, Dr. Zhou provided the most frequently used `itemid` for the measurements. These are displayed below:
 ```{r}
 lab_ids <- labcodes %>%
   filter(itemid %in% c("50912", "50971", "50983", "50902", "50882", "51221", 
@@ -655,12 +665,11 @@ As before, the problem could not be completed as initially intended. However, a 
 
 First, read in the dictionary file for chart items: 
 ```{r}
-chart_codes <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
-  print(width = Inf) 
+chart_codes <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) 
 ```
 
 Search for key terms in the `label` column to find the lab measurement of interest. For example, the following code can be used to to search for each measurement of interest, view the corresponding chart items, and get a vector of `itemid` values: 
-```{r}
+```{r eval = F}
 measurements <- c("heart rate", "blood pressure mean", "systolic", 
                   "temperature", "SpO2", "respiratory rate")
 
@@ -675,21 +684,21 @@ We can inspect the output and choose which measurement seems the most reasonable
 
 My best guesses at the appropriate codes are as follows:
 
-Measurement                        | `itemid`| Rationale
------------------------------------|---------| ---------
-Heart Rate                         | 220045  | Seems to be most general version
-Blood Pressure Mean (invasive)     | 220052  | Only invasive BP mean
-Blood Pressure Mean (noninvasive)  | 220181  | Only noninvasive BP mean
-Systolic Blood Pressure            | 220179  | Seems most general
-Body Temperature (F)               | 223761  | I'm most familiar with Fahrenheit
-Sp02                               | 229862  | Sounds more general than "limit"
-Respiratory Rate                   | 220210  | Seems like most general version
+Measurement                       | `itemid`| Rationale
+----------------------------------|---------| ---------
+Heart Rate                        | 220045  | Seems to be most general version
+Blood Pressure Mean (invasive)    | 220052  | Only invasive BP mean
+Blood Pressure Mean (noninvasive) | 220181  | Only noninvasive BP mean
+Systolic Blood Pressure           | 220179  | Seems most general systolic measurement
+Body Temperature (F)              | 223761  | Seems like the basic Fahrenheit measurement
+Sp02                              | 229862  | Sounds more general than "limit", but I would need to search by frequency
+Respiratory Rate                  | 220210  | Most general respiratory rate item
 
 Once this process has been repeated for all measurements of interest, and desired `itemid` values have been saved into vector `top_ids`, the `chart_events` data can be filtered to contain only the subset of desired measurements.
 
 ```{r eval=F}
 chart_events <- chart_events %>%
-  filter(itemid %in% top_ids %>%
+  filter(itemid %in% top_ids) %>%
   print()
 ```
 
