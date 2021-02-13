@@ -35,6 +35,10 @@ Use tidyverse (ggpot2, dplyr) to explore the [MIMIC-IV](https://mimic-iv.mit.edu
 system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 ```
 
+
+## Note  
+As with many of my classmates, I've had issues with the teaching server while working on this assignment. Particularly for Questions 6-8, I wasn't able to do as much testing and troubleshooting as I would have liked, due to frequent crashes and loss of environmental variables. 
+
 ## Q1. PhysioNet credential
 
 At this moment, you should already get credentialed on the PhysioNet. Please include a screenshot of your `Data Use Agreement for the MIMIC-IV (v0.4)`.
@@ -53,13 +57,13 @@ In this homework, we stick to the tidyverse.
 
 ### Solution
 
-The code below records the time required to read in `admissions.csv.gz`. 
-```{r message=F}
+The code below records the time required to read in `admissions.csv.gz` using each of the 3 methods.
+```{r message = F}
 file_path <- str_c(mimic_path, "/core/admissions.csv.gz")
 
-time1 <- system.time(file1 <- read.csv(file_path))
-time2 <- system.time(file2 <- read_csv(file_path))
-time3 <- system.time(file3 <- fread(file_path))
+read.csv_time <- system.time(file1 <- read.csv(file_path))
+read_csv_time <- system.time(file2 <- read_csv(file_path))
+fread_time <- system.time(file3 <- fread(file_path))
 
 ```
 
@@ -67,11 +71,11 @@ A comparison of elapsed times are displayed in the table.
 
 Function | Time Elapsed for Execution
 -------- | -------------
-read.csv | `r time1[3]` 
-read_csv | `r time2[3]`
-fread    | `r time3[3]`
+read.csv | `r read.csv_time[3]` 
+read_csv | `r read_csv_time[3]`
+fread    | `r fread_time[3]`
 
-`read.csv` seems to be the slowest, by far. `read_csv` and `fread` are similar, but `fread` tends to be a slight bit faster.
+`read.csv` is consistently the slowest, by far. `read_csv` and `fread` are similar, but `fread` tends to be a slight bit faster.
 
 
 Memory is an issue for this assignment, so these variables are removed from the environment.
@@ -80,9 +84,9 @@ rm(file1)
 rm(file2)
 rm(file3)
 
-rm(time1)
-rm(time2)
-rm(time3)
+rm(read.csv_time)
+rm(read_csv_time)
+rm(fread_time)
 ```
 
 
@@ -98,7 +102,7 @@ rm(time3)
 
 ### Solution
 
-First, read in `icustays` data and view the first 10 observations. 
+The first step is to read in `icustays` data and examine the data structure: 
 ```{r}
 icu_stays <- read_csv(str_c(mimic_path, "/icu/icustays.csv.gz")) 
 
@@ -106,7 +110,9 @@ icu_stays %>%
   print()
 ``` 
 
-Check number of unique `stay_id` values:
+
+#### Unique `stay_id` and `subject_id` values
+We then check the number of unique `stay_id` values:
 ```{r}
 icu_stays %>% 
   distinct(stay_id) %>%
@@ -115,7 +121,7 @@ icu_stays %>%
 There are 69,619 unique `stay_id` values. This is equal to the number of observations in the original data set, because each observation has been assigned a unique `stay_id` value.  
 
 
-Check number of unique `subject_id` values:
+We are also interested in the number of unique `subject_id` values:
 ```{r}
 icu_stays %>%
   distinct(subject_id) %>%
@@ -135,6 +141,7 @@ icu_stays %>%
 One patient has had 33 ICU stays! However, the majority of patients have a count of 1, 2, or 3 stays.
 
 
+#### Length of Stay
 Visualize length of stay, which is coded as the the `los` variable. In my initial plot, it appeared that the mass of observations had short stays (less than 30 days), but there were a few extreme outlying values that made the plot hard to interpret. I want to see how common these long stays are. 
 ```{r}
 icu_stays %>%
@@ -144,19 +151,19 @@ icu_stays %>%
 ```
 Out of over 69,000 observations, only 112 had stays of 50 days or longer, and only 11 had stays of 100 days or longer. 
 
-To make the graph more interpretable, I decided to exclude these outlying values. They should not be forgotten, but do not represent a typical ICU stay. 
+To make the graph more interpretable, I decided to exclude these outlying values in the plot. Though they should not be ignored, they do not represent a typical ICU stay. 
 ```{r}
 icu_stays %>%
   ggplot(aes(x = los)) +
   geom_histogram(binwidth = .5) +
   coord_cartesian(xlim = c(0,50)) +
-  labs(title = "Distribution of Length of Stay (extreme values excluded)", 
+  labs(title = "Distribution of Length of Stay (outliers excluded)", 
        x = "Length of Stay (days)")
 ```
 It appears that most people stay in the ICU for less than 5 days, and very few stay beyond 10. 
 
 
-`first_careunit`
+#### First and Last Care Unit
 ```{r}
 icu_stays %>%
   ggplot(aes(x = first_careunit)) +
@@ -166,7 +173,6 @@ icu_stays %>%
 ```
 
 
-`last_careunit`
 ```{r}
 icu_stays %>%
   ggplot(aes(x = last_careunit)) +
@@ -175,8 +181,7 @@ icu_stays %>%
   labs(x = "Last Care Unit", title = "Last Care Unit during ICU Stay")
 ```
 
-
-I'm curious how first unit differs from last care unit, so I plot the counts side by side. 
+I'm curious how the distribution of first care units differs from last care unit, so I plot the counts side by side. 
 ```{r}
 icu_stays %>%
   pivot_longer(cols = c(first_careunit, last_careunit), 
@@ -236,53 +241,57 @@ admissions_unique %>%
 Though there were 524,520 admissions, there are only 257,366 unique patients in the data. 
 
 
-#### Admission year  
+#### Admission year    
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(year(admittime))) +
   labs(x = "Year", title = "Year of Admission")
 ```
+    
 These admission times are all in the future! This is because the date information is shifted for each patient, to protect their privacy. 
 
 
-#### Admission month  
+#### Admission month    
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(month(admittime, label = T))) +
   labs(title = "Admissions by Month", x = "Month")
 ```
+    
 The admissions per month seem concordant with the number of days in each month. For example, it makes sense that February has the least admissions, as it has only 28 days. Similarly, there is a small dip for the months with 30 days. 
 
 
-#### Admission month day 
+#### Admission month day  
+
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(day(admittime))) +
   labs(title = "Admissions by Day of Month", x = "Day of Month")
 ```
-Admissions are pretty consistent throughout the month, with the exception of a dropoff for the 29th, 30th, and 31st days of the month. This is simply because some months have only 28 or 30 days, rather than 31.
+    
+Admissions are pretty consistent throughout the month, with the exception of a dropoff for the 29th, 30th, and 31st days of the month. This is simply because some months have only 28 or 30 days, rather than 31. Strangely, it looks like there is a small dip on the 13th of the month. I would guess that superstition about the number 13 is causing some people to avoid scheduling procedures on that day.
 
-Strangely, it looks like there is a small dip on the 13th of the month. I would guess that superstition about the number 13 is causing some people to avoid scheduling procedures on that day.
-
-#### Admission week day  
+#### Admission week day    
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(wday(admittime, label = T))) +
   labs(title = "Admissions by Day of Week", x = "Day of Week")
 ```
+  
 It looks like admissions are consistent throughout the week. 
 
 
-#### Admission hour   
+#### Admission hour     
 ```{r}
 ggplot(data = admissions) +
   geom_bar(aes(hour(admittime))) +
   labs(title = "Admissions by Hour", x = "Hour")
 ```
-The pattern for admission time is a bit hard to understand. There are a lot of admissions at 8:00 a.m. (perhaps checking in for a procedure that day), followed by a drop-off. Then, admissions rise throughout the day and peak at around 6:00 p.m., before dropping off. However, there is a huge peak at midnight, which seems unusual. I'm guessing this may be due to some hospitals using midnight as a value when the true admission time is not recorded.
+    
+The pattern for admission time is a bit hard to understand. There are a lot of admissions at 8:00 a.m. (perhaps checking in for a procedure that day), followed by a drop-off. Then, admissions rise throughout the day and peak at around 6:00 p.m., before dropping off again. However, there is a huge peak at midnight, which seems unusual. I'm guessing this may be due to some hospitals using midnight as the default time when only the day of admission is known.
 
 
-#### Number of deaths in each year  
+#### Number of deaths in each year    
 ```{r}
 admissions %>%
   filter(!is.na(deathtime)) %>%
@@ -290,9 +299,10 @@ admissions %>%
   geom_bar(aes(year(deathtime))) + 
   labs(title = "Number of Deaths by Year", x = "Year")
 ```
+    
 The shape roughly matches the pattern seen in the admissions by year plot, but there is more year-to-year fluctuation.
-
-#### Admission type  
+ 
+#### Admission type    
 ```{r}
 admissions %>%
   ggplot() +
@@ -300,9 +310,10 @@ admissions %>%
   coord_flip() +
   labs(title = "Admission Type", x = "Admission Type")
 ```
+  
 The most common code is `EW EMER`, which likely corresponds to some sort of emergency admission. 
 
-#### Number of admissions per patient  
+#### Number of admissions per patient    
 ```{r}
 admissions %>%
   count(subject_id) %>%
@@ -311,6 +322,7 @@ admissions %>%
   labs(title = "Number of Admissions per Patient", x = "Number of Admissions", 
        y = "Number of Patients")
 ```
+    
 It's clear that the vast majority of patients have very few admissions, but there are outliers that are making the plot harder to read. 
 
 To manually inspect: 
@@ -347,9 +359,10 @@ admissions %>%
   labs(title = "Number of Admissions for Frequent Patients", x = "Number of Admissions", 
        y = "Number of Patients")
 ```
+    
 Even among the "frequent fliers", having more than 100 admissions is extremely rare.
 
-#### Admission location  
+#### Admission location    
 ```{r}
 admissions %>%
   ggplot() +
@@ -357,9 +370,10 @@ admissions %>%
   coord_flip() +
   labs(title = "Admission Location", x = "Admission Location")
 ```
+    
 Emergency room admissions are most common, followed by physician referrals. For a few patients, this information is not available (`NA` or `Information not Available`).
 
-#### Discharge location  
+#### Discharge location    
 ```{r}
 admissions %>%
   ggplot() +
@@ -367,30 +381,33 @@ admissions %>%
   coord_flip() +
   labs(x = "Discharge Location", x = "Discharge Location")
 ```
+    
 Most patients get discharged to their home. However, there is a large number of `NA` values. I'm assuming this means the information was not known/recorded for those patients, but I'm not sure.
 
 
 
-#### Insurance  
+#### Insurance    
 ```{r}
 admissions_unique %>% 
   ggplot(aes(x = factor(1), fill = insurance)) +
-  geom_bar(width=1) +
+  geom_bar(width = 1) +
   coord_polar("y") +
   labs(title = "Insurance Type of Unique Patients", x = NULL)
 ```
+    
 The majority of unique patients have non-Medicare, non-Medicaid insurance. Among the patients who do have Medicare/Medicaid, Medicare appears to be ~3 times more common.  
 
 
-#### Language  
+#### Language    
 ```{r}
 admissions_unique %>% 
   ggplot(aes(x = factor(1), fill = language)) +
-  geom_bar(width=1) +
+  geom_bar(width = 1) +
   coord_polar("y") +
   labs(title = "Language of Unique Patients", x = NULL) + 
   scale_fill_manual(values = c("#b3669e", "#60aeb2")) 
 ```
+    
 This isn't overly informative - most patients have English listed as their language. The remaining patients have `?` - it's ambiguous if this is the coding for "language other than English" or if it could also mean "unknown."
 
 
@@ -437,7 +454,7 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 
 ### Solution
 
-Read in the data and inspect:
+First, read in the data and inspect:
 ```{r}
 patients <- read_csv(str_c(mimic_path, "/core/patients.csv.gz")) 
 
@@ -446,7 +463,7 @@ patients %>%
   print(width = Inf)
 ```
 
-Look at gender distribution:
+#### Gender  
 ```{r}
 patients %>%
   ggplot(aes(x = factor(1), fill = gender)) +
@@ -454,17 +471,20 @@ patients %>%
     coord_polar("y") +
     labs(x = "Gender")
 ```
-There are few more women than men. Perhaps childbirth and pregnancy-related visits are part of the explanation.
+    
+I would have expected a 50/50 split, but there are acutally more women than men. Perhaps childbirth and pregnancy-related visits are part of the explanation.
 
+
+#### Anchor Age  
 ```{r}
 patients %>%
   ggplot() +
   geom_bar(aes(anchor_age)) 
 ```
-There is a huge spike at 0, and then no observations until age 18. I have two theories: one is that the age of minors is not recorded, to protect privacy. Instead, they might be coded as having age "0." After age 18, the ages appear to be coded as normal. There is also another spike at the upper end, at 91 years old. Perhaps this is the maximium value that they record, so anyone aged 91+ is coded as being 91. 
+    
+There is a huge spike at 0, and then no observations until age 18. I have two theories: one is that the age of minors is not recorded, to protect privacy. Instead, they might be coded as having age "0." After age 18, the ages appear to be coded as normal. The other theory is that "0" is a placeholder value, for when age is not known/recorded. There is also another spike at the upper end, at 91 years old. Perhaps this is the maximium value that they record, so anyone aged 91+ is coded as being 91. 
 
-I'm curious about the people with age coded as 0:
-
+I'm curious about the people with age coded as 0 so decided to look at admissions data for those individuals.
 ```{r}
 ids <- patients %>%
   filter(anchor_age == 0) %>%
@@ -480,13 +500,10 @@ age_0 %>%
   count(marital_status, admission_location, admission_type) %>%
   arrange(desc(n))
 
-```
-
-The majority of people with age 0 are elective admissions who are missing some other pieces of chart information (admission location and marital status). I'm guessing there is a systemic reason for this, such as differences in record keeping for elective admissions.  
-
-```{r}
 rm(age_0)
 ```
+
+The majority of people with age 0 are elective admissions who are missing some other pieces of chart information (admission location and marital status). I'm guessing there is a systemic reason for this, such as differences in record keeping for elective admissions, so my theory about them being pediatric patients is probably not correct.
  
 
 ## Q6. Lab results
@@ -814,6 +831,7 @@ full_icu_labs <- labs %>%
 rm(labs)
 ```
 
+
 We'll follow a similar pattern for chart events. First, it's convenient to save a version with only adults in the ICU data.
 ```{r}
 if(!file.exists("chartevents_filtered_icustays.csv.gz")) {
@@ -823,14 +841,16 @@ if(!file.exists("chartevents_filtered_icustays.csv.gz")) {
 }
 ```
 
-```{r}
-chart_events <- fread("chartevents_filtered_icustays.csv.gz", nThread = 1)
+
+The below code can be uncommented to read in the chart events data, if needed.
+```{r eval = F}
+#chart_events <- fread("chartevents_filtered_icustays.csv.gz", nThread = 1)
 ```
 
-Now, we repeat the same process as above. Notice that we now have two tibbles: `full_icu_labs` and `full_icu_chart`.  Also, rather than `hadm_id`, `stay_id` is the unique identifier for the chart events. 
+Now, we repeat the same process as above. Notice that we now have two tibbles: `full_icu_labs` and `full_icu_chart`.  Since `chart_events` also has the `stay_id` variable, we will also use this as an identifier in the join.
 ```{r}
 full_icu_chart <- chart_events %>%
-  semi_join(full_icu_tibble, by = c("subject_id", "stay_id")) %>%
+  semi_join(full_icu_tibble, by = c("subject_id", "stay_id", "hadm_id")) %>%
   left_join(select(full_icu_tibble, subject_id, stay_id, intime), 
                    by = c("subject_id", "stay_id")) %>%
   filter(charttime >= intime) %>%
@@ -839,7 +859,7 @@ full_icu_chart <- chart_events %>%
   slice_head(n = 1) %>%   
   select(-charttime, -intime) %>%
   spread(key = itemid, value = valuenum) %>%
-  right_join(full_icu_tibble, by = c("subject_id", "hadm_id")) %>%
+  right_join(full_icu_tibble, by = c("subject_id", "stay_id", "hadm_id")) %>%
   ungroup() %>%
   rename_at(vars(as.character(chart_ids$itemid)), ~chart_ids$label) %>%
   print()
@@ -848,11 +868,10 @@ full_icu_chart <- chart_events %>%
 rm(chart_events)
 ```
 
-Left join by all matching variables in the data, since they should match between the two datasets.
+Left join by all common variables in the data - they will match between the two datasets, since the data is derived from the same datasets using the same identifiers.
 ```{r} 
 final_icu_data <- full_icu_labs %>%
-  left_join(full_icu_chart) %>% 
-  print(width = Inf)
+  left_join(full_icu_chart)
 ```
 
 Many intermediate data frames are no longer needed.
@@ -889,7 +908,7 @@ final_icu_data %>%
 ```
 201 people die after the 30 day mark. 
 
-Here is the structure of the final tibble!
+Here is the structure of the final tibble:
 ```{r}
 final_icu_data %>%
   print(width = Inf)
