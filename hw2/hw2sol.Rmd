@@ -39,7 +39,8 @@ system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 ### Note  
 As with many of my classmates, I had a lot of issues with the teaching server while working on this assignment. Particularly for Questions 6-8, I wasn't able to do as much testing and troubleshooting as I would have liked, due to very frequent crashes (and loss of environmental variables each time). 
 
-Before turning in, I tried to knit my RMarkdown file, but it kept getting stuck and not fully knitting. Thus, the RMarkdown file that I'm turning in will not be quite my final version of code. Unfortunately, there were a few small mistakes that didn't get fixed for the final version. This .Rmd file represents the final version.
+I hope everything knits properly - I wasn't exactly sure how to make the code reporducible, since we are using slightly different versions of the data.
+
 
 ## Q1. PhysioNet credential
 
