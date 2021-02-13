@@ -537,7 +537,7 @@ if (str_detect(os, &quot;Linux&quot;)) {
 <div id="note" class="section level3">
 <h3>Note</h3>
 <p>As with many of my classmates, I had a lot of issues with the teaching server while working on this assignment. Particularly for Questions 6-8, I wasn’t able to do as much testing and troubleshooting as I would have liked, due to very frequent crashes (and loss of environmental variables each time).</p>
-<p>I hope everything knits properly - I wasn’t exactly sure how to make the code reporducible, since we are using slightly different versions of the data.</p>
+<p>Much of the code in Question 6 through 8 was provided by Dr. Zhou. I adapted it slightly to fit my needs, but would like to acknowledge that his code provided a major basis for the final solution.</p>
 </div>
 <div id="q1.-physionet-credential" class="section level2">
 <h2>Q1. PhysioNet credential</h2>
@@ -1338,7 +1338,7 @@ for (item in measurements) {
 </div>
 <div id="reading-in-the-filtered-file-1" class="section level4">
 <h4>Reading in the filtered file</h4>
-<p>As with the <code>labevents</code> data, Dr. Zhou did the steps outlined above but used <code>awk</code> to select only the necessary columns and rows of the <code>chartevents</code> data. This pre-filtered file, called <code>chartevents_filtered.csv.gz</code>, was read in and saved using the following code:</p>
+<p>As with the <code>labevents</code> data, Dr. Zhou did the steps outlined above but used <code>awk</code> to select only the necessary columns and rows of the <code>chartevents</code> data. This pre-filtered file, called <code>chartevents_filtered.csv.gz</code>, was read in and saved using the following code (which was provided by Dr. Zhou):</p>
 <pre class="r"><code>if(!file.exists(&quot;chartevents_filtered.csv.gz&quot;)) {
     chartevents_tble &lt;- fread(str_c(derived_data_path, 
                                     &quot;/chartevents_filtered_itemid.csv.gz&quot;),

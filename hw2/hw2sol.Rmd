@@ -39,8 +39,7 @@ system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 ### Note  
 As with many of my classmates, I had a lot of issues with the teaching server while working on this assignment. Particularly for Questions 6-8, I wasn't able to do as much testing and troubleshooting as I would have liked, due to very frequent crashes (and loss of environmental variables each time). 
 
-I hope everything knits properly - I wasn't exactly sure how to make the code reporducible, since we are using slightly different versions of the data.
-
+Much of the code in Question 6 through 8 was provided by Dr. Zhou. I adapted it slightly to fit my needs, but would like to acknowledge that his code provided a major basis for the final solution.
 
 ## Q1. PhysioNet credential
 
@@ -714,7 +713,7 @@ chart_events <- chart_events %>%
 
 #### Reading in the filtered file
 
-As with the `labevents` data, Dr. Zhou did the steps outlined above but used `awk` to select only the necessary columns and rows of the `chartevents` data. This pre-filtered file, called `chartevents_filtered.csv.gz`, was read in and saved using the following code:
+As with the `labevents` data, Dr. Zhou did the steps outlined above but used `awk` to select only the necessary columns and rows of the `chartevents` data. This pre-filtered file, called `chartevents_filtered.csv.gz`, was read in and saved using the following code (which was provided by Dr. Zhou):
 ```{r eval = F}
 if(!file.exists("chartevents_filtered.csv.gz")) {
     chartevents_tble <- fread(str_c(derived_data_path, 
