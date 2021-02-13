@@ -682,17 +682,17 @@ for (item in measurements) {
 ```
 We can inspect the output and choose which measurement seems the most reasonable to keep  However, if there is any doubt about which `itemid` to use, we use a similar process to what was done in Q6. 
 
-My best guesses at the appropriate codes are as follows:
+My best guesses at the appropriate codes are as follows. I tried to choose the most general form of each measurement, but I would want to verify some of them (blood pressure, Sp02) using the steps outlined in Question 6:
 
-Measurement                       | `itemid`| Rationale
-----------------------------------|---------| ---------
-Heart Rate                        | 220045  | Seems to be most general version
-Blood Pressure Mean (invasive)    | 220052  | Only invasive BP mean
-Blood Pressure Mean (noninvasive) | 220181  | Only noninvasive BP mean
-Systolic Blood Pressure           | 220179  | Seems most general systolic measurement
-Body Temperature (F)              | 223761  | Seems like the basic Fahrenheit measurement
-Sp02                              | 229862  | Sounds more general than "limit", but I would need to search by frequency
-Respiratory Rate                  | 220210  | Most general respiratory rate item
+Measurement                       | `itemid`
+----------------------------------|---------
+Heart Rate                        | 220045  
+Blood Pressure Mean (invasive)    | 220052  
+Blood Pressure Mean (noninvasive) | 220181  
+Systolic Blood Pressure           | 220179  
+Body Temperature (F)              | 223761  
+Sp02 Forehead Sensor              | 229862   
+Respiratory Rate                  | 220210  
 
 Once this process has been repeated for all measurements of interest, and desired `itemid` values have been saved into vector `top_ids`, the `chart_events` data can be filtered to contain only the subset of desired measurements.
 
@@ -932,4 +932,3 @@ Here is the structure of the final tibble:
 final_icu_data %>%
   print(width = Inf)
 ```
-
