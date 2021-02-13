@@ -435,6 +435,9 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 - `gender`  
 - `anchor_age` (explain pattern you see)
 
+### Solution
+
+Read in the data and inspect:
 ```{r}
 patients <- read_csv(str_c(mimic_path, "/core/patients.csv.gz")) 
 
@@ -443,7 +446,7 @@ patients %>%
   print(width = Inf)
 ```
 
-
+Look at gender distribution:
 ```{r}
 patients %>%
   ggplot(aes(x = factor(1), fill = gender)) +
@@ -451,16 +454,40 @@ patients %>%
     coord_polar("y") +
     labs(x = "Gender")
 ```
-
+There are few more women than men. Perhaps childbirth and pregnancy-related visits are part of the explanation.
 
 ```{r}
 patients %>%
   ggplot() +
-    geom_bar(aes(anchor_age)) 
+  geom_bar(aes(anchor_age)) 
 ```
-There is a huge spike at 0, and then no observations until ~age 18. Thus, my best guess is that the age of minors is not recorded, to protect privacy. Instead, they all recieve the age "0." After age 18, the ages appear to be coded as normal.  However, there is another spike at the upper end. Perhaps the system can't keep track of 3 digits for age, or they want to protect the privacy of their oldest patients by grouping their ages. 
+There is a huge spike at 0, and then no observations until age 18. I have two theories: one is that the age of minors is not recorded, to protect privacy. Instead, they might be coded as having age "0." After age 18, the ages appear to be coded as normal. There is also another spike at the upper end, at 91 years old. Perhaps this is the maximium value that they record, so anyone aged 91+ is coded as being 91. 
 
+I'm curious about the people with age coded as 0:
 
+```{r}
+ids <- patients %>%
+  filter(anchor_age == 0) %>%
+  select(subject_id) %>%
+  .$subject_id
+  
+
+age_0 <- admissions %>%
+  filter(subject_id %in% ids) %>%
+  print()
+
+age_0 %>% 
+  count(marital_status, admission_location, admission_type) %>%
+  arrange(desc(n))
+
+```
+
+The majority of people with age 0 are elective admissions who are missing some other pieces of chart information (admission location and marital status). I'm guessing there is a systemic reason for this, such as differences in record keeping for elective admissions.  
+
+```{r}
+rm(age_0)
+```
+ 
 
 ## Q6. Lab results
 
@@ -842,8 +869,7 @@ final_icu_data <- final_icu_data %>%
   mutate(time_to_death = as.duration(deathtime - intime),
          death_in_30 = ifelse(is.na(time_to_death) | time_to_death > ddays(30), 
                                     FALSE, TRUE)) %>%
-  select(-time_to_death) %>%
-  print()
+  select(-time_to_death)
 ```
 
 How many people die within 30 days?
@@ -862,3 +888,10 @@ final_icu_data %>%
   count()
 ```
 201 people die after the 30 day mark. 
+
+Here is the structure of the final tibble!
+```{r}
+final_icu_data %>%
+  print(width = Inf)
+```
+
