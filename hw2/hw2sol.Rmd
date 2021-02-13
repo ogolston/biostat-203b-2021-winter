@@ -39,7 +39,7 @@ system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 ### Note  
 As with many of my classmates, I had a lot of issues with the teaching server while working on this assignment. Particularly for Questions 6-8, I wasn't able to do as much testing and troubleshooting as I would have liked, due to very frequent crashes (and loss of environmental variables each time). 
 
-I'm also not certain whether you will be able to properly knit/reproduce the file, since I'm relying mostly on a filtered down data set that I saved. As is, it may take some time to run, since it will try to write and read the filtered datasets...  
+Before turning in, I tried to knit my RMarkdown file, but it kept getting stuck and not fully knitting. Thus, the RMarkdown file that I'm turning in will not be quite my final version of code. However, I hope it will be close.  
 
 ## Q1. PhysioNet credential
 
@@ -672,7 +672,7 @@ As before, the problem could not be completed as initially intended. However, a 
 
 
 First, read in the dictionary file for chart items: 
-```{r}
+```{r message = F}
 chart_codes <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) 
 ```
 
