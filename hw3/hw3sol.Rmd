@@ -145,7 +145,7 @@ icustays_tble %>%
   collect() %>%
   mutate(death_in_month = ifelse(is.na(deathtime - admittime) | 
                                    deathtime - admittime > 30, FALSE, TRUE)) %>%
-  write_rds("mimiciv_shiny//icu_cohort.rds")
+  write_rds("mimiciv_shiny/icu_cohort.rds")
 ```
 
 
