@@ -4,58 +4,80 @@ library(tidyverse)
 #icu_cohort = readRDS("hw3/mimiciv_shiny/icu_cohort.rds")
 
 # Define UI for miles per gallon app ----
-ui <- fluidPage(
-  
-  # App title ----
-  titlePanel("Hello Shiny!"),
-  
-  # Sidebar layout with input and output definitions ----
-  sidebarLayout(
-    
-    # Sidebar panel for inputs ----
-    sidebarPanel(
-      
-      # Input: Slider for the number of bins ----
-      sliderInput(inputId = "bins",
-                  label = "Number of bins:",
-                  min = 1,
-                  max = 50,
-                  value = 30)
-      
-    ),
-    
-    # Main panel for displaying outputs ----
-    mainPanel(
-      
-      # Output: Histogram ----
-      plotOutput(outputId = "distPlot")
-      
+ui <- navbarPage("MIMIC-IV Data Dashboard",
+  tabPanel("Admissions",
+     sidebarLayout(
+         sidebarPanel(
+         selectInput("admit_var", "Choose variable of interest", 
+                     choices = list("First Care Unit",
+                                    "Last Care Unit",
+                                    "Admission Type",
+                                    "Admission Location"),
+                     selected = "First Care Unit")
+       ),
+       mainPanel(
+         plotOutput(outputId = "distPlot")
+       )
+    )   
+  ),
+  tabPanel("Patients",
+    titlePanel("Patients Data"),
+    sidebarLayout(
+      sidebarPanel(
+      ),
+    mainPanel()
     )
   )
+  # tabPanel("Lab Events",
+  #   titlePanel("Lab Event Data"),
+  #   sidebarLayout(
+  #     sidebarPanel(
+  #       #sliderInput()
+  #     ),
+  #    
+  #     mainPanel(
+  #       plotOutput(outputId = "distPlot")
+  #     )
+  #   )        
+  # ),
+  # tabPanel("Chart Events",
+  #   titlePanel("Chart Event Data"),
+  #   sidebarLayout(
+  #     sidebarPanel(
+  #       #sliderInput()
+  #     ),
+  #     
+  #     mainPanel(
+  #       plotOutput(outputId = "distPlot")
+  #     )
+  #   )         
+  #)
 )
+  
+  
+ 
 
 
 server <- function(input, output) {
-  
-  # Histogram of the Old Faithful Geyser Data ----
-  # with requested number of bins
-  # This expression that generates a histogram is wrapped in a call
-  # to renderPlot to indicate that:
-  #
-  # 1. It is "reactive" and therefore should be automatically
-  #    re-executed when inputs (input$bins) change
-  # 2. Its output type is a plot
+
   output$distPlot <- renderPlot({
+    # data <- switch(input$admit_var,
+    #                "First Care Unit" = icu_cohort$first_careunit,
+    #                "Last Care Unit" = icu_cohort$last_careunit,
+    #                "Admission Type" = icu_cohort$admission_type,
+    #                "Admission Location" = icu_cohort$admission_location)
     
-    x    <- faithful$waiting
-    bins <- seq(min(x), max(x), length.out = input$bins + 1)
+    data <- switch(input$admit_var,
+                   "First Care Unit" = "first_careunit",
+                   "Last Care Unit" = "last_careunit",
+                   "Admission Type" = "admission_type",
+                   "Admission Location" = "admission_location")
     
-    hist(x, breaks = bins, col = "#75AADB", border = "white",
-         xlab = "Waiting time to next eruption (in mins)",
-         main = "Histogram of waiting times")
-    
-  })
+    ggplot(icu_cohort) +
+      geom_bar(aes_string(data))
+    })
   
+   
 }
 
 
