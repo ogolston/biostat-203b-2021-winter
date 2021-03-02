@@ -30,9 +30,20 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
   tabPanel("Patients",
     titlePanel("Patients Data"),
     sidebarLayout(
-      sidebarPanel( ),
+      sidebarPanel( 
+        selectInput("patient_var", "Choose variable of interest",
+                    choices = list("Insurance",
+                                   "Language",
+                                   "Marital Status",
+                                   "Ethnicity",
+                                   "Gender",
+                                   "Age",
+                                   "Death in 30 Days?")         
+        ) 
+        
+      ),
       mainPanel(
-        #plotOutput(outputId = "patientPlot")
+        plotOutput(outputId = "patientPlot")
       )
     )
   ),
@@ -112,6 +123,22 @@ server <- function(input, output) {
       geom_bar(aes_string(data))
     })
   
+  
+  output$patientPlot <- renderPlot({
+    data <- switch(input$patient_var,
+                   "Insurance" = "insurance",
+                    "Language" = "language",
+                    "Marital Status" = "marital_status",
+                    "Ethnicity" = "ethnicity",
+                    "Gender" = "gender",
+                    "Age" = "age_at_adm",
+                    "Death in 30 Days?" = "death_in_month")
+                   
+                   
+    ggplot(icu_cohort) +
+      geom_bar(aes_string(data))
+    
+  })
   
   output$labPlot <- renderPlot({
     data <- switch(input$lab_var,
