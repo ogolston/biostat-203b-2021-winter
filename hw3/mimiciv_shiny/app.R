@@ -65,10 +65,19 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
     titlePanel("Chart Event Data"),
     sidebarLayout(
       sidebarPanel(
+        selectInput("chart_var", "Choose chart value of interest", 
+                    choices = list("Heart Rate",
+                                   "Systolic BP (non-invasive)",
+                                   "Mean BP (non-invasive)",
+                                   "Respiratory Rate",
+                                   "Temperature (F)",
+                                   "Systolic BP (arterial)",
+                                   "Mean BP (arterial)"),
+                    selected = "Heart Rate")
       ),
 
       mainPanel(
-        #plotOutput(outputId = "chartPlot")
+        plotOutput(outputId = "chartPlot")
       )
     )
   ),
@@ -122,6 +131,24 @@ server <- function(input, output) {
       geom_histogram(aes_string(data))
   })
    
+  output$chartPlot <- renderPlot({
+    data <- switch(input$chart_var,
+                   "Heart Rate" = "heart_rate",
+                    "Systolic BP (non-invasive)" = 
+                             "non_invasive_blood_pressure_systolic",
+                    "Mean BP (non-invasive)" = 
+                              "non_invasive_blood_pressure_mean",
+                    "Respiratory Rate" = "respiratory_rate",
+                    "Temperature (F)" = "temperature_fahrenheit",
+                    "Systolic BP (arterial)" =
+                              "arterial_blood_pressure_systolic",
+                    "Mean BP (arterial)" =
+                              "arterial_blood_pressure_mean")
+    
+    ggplot(icu_cohort) +
+      geom_histogram(aes_string(data))
+    
+  })
 }
 
 
