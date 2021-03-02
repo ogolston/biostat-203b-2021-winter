@@ -15,11 +15,11 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
      sidebarLayout(
          sidebarPanel(
          selectInput("admit_var", "Choose variable of interest", 
-                     choices = list("First Care Unit",
-                                    "Last Care Unit",
-                                    "Admission Type",
-                                    "Admission Location"),
-                     selected = "First Care Unit")
+                     choices = list("First Care Unit" = "first_careunit",
+                                    "Last Care Unit" = "last_careunit",
+                                    "Admission Type" = "admission_type",
+                                    "Admission Location" = "admission_location"),
+                     selected = "first_careunit")
        ),
        mainPanel(
          plotOutput(outputId = "admitPlot")
@@ -32,16 +32,16 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
     sidebarLayout(
       sidebarPanel( 
         selectInput("patient_var", "Choose variable of interest",
-                    choices = list("Insurance",
-                                   "Language",
-                                   "Marital Status",
-                                   "Ethnicity",
-                                   "Gender",
-                                   "Age",
-                                   "Death in 30 Days?")         
-        ) 
-        
+                    choices = list("Insurance" = "insurance",
+                                   "Language" = "langauge",
+                                   "Marital Status" = "marital_status",
+                                   "Ethnicity" = "ethnicity",
+                                   "Gender" ="gender",
+                                   "Age" = "age_at_adm",
+                                   "Death in 30 Days?" = "death_in_month"),
+                    selected = "insurance")
       ),
+      
       mainPanel(
         plotOutput(outputId = "patientPlot")
       )
@@ -53,19 +53,20 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
     sidebarLayout(
       sidebarPanel( 
         selectInput("lab_var", "Choose lab measurement of interest", 
-                    choices = list("Bicarbonate",
-                                   "Calcium",
-                                   "Chloride",
-                                   "Creatinine",
-                                   "Glucose",
-                                   "Magnesium",
-                                   "Potassium",
-                                   "Sodium",
-                                   "Hemacrit",
-                                   "White Blood Cells",
-                                   "Lactate"),
-                    selected = "Bicarbonate")
+                    choices = list("Bicarbonate" = "bicarbonate",
+                                   "Calcium" = "calcium",
+                                   "Chloride" = "chloride",
+                                   "Creatinine" = "creatinine",
+                                   "Glucose" = "glucose",
+                                   "Magnesium" = "magnesium",
+                                   "Potassium" = "potassium",
+                                   "Sodium" = "sodium",
+                                   "Hemacrit" = "hemacrit",
+                                   "White Blood Cells" = "wbc",
+                                   "Lactate" = "lactate"),
+                    selected = "bicarbonate")
       ),
+      
       mainPanel(
         plotOutput(outputId = "labPlot")
       )
@@ -77,14 +78,18 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
     sidebarLayout(
       sidebarPanel(
         selectInput("chart_var", "Choose chart value of interest", 
-                    choices = list("Heart Rate",
-                                   "Systolic BP (non-invasive)",
-                                   "Mean BP (non-invasive)",
-                                   "Respiratory Rate",
-                                   "Temperature (F)",
-                                   "Systolic BP (arterial)",
-                                   "Mean BP (arterial)"),
-                    selected = "Heart Rate")
+                    choices = list("Heart Rate" = "heart_rate",
+                                   "Systolic BP (non-invasive)" 
+                                        = "non_invasive_blood_pressure_systolic",
+                                   "Mean BP (non-invasive)"= 
+                                     "non_invasive_blood_pressure_mean",
+                                   "Respiratory Rate" = "respiratory_rate",
+                                   "Temperature (F)" = "temperature_fahrenheit",
+                                   "Systolic BP (arterial)" =
+                                     "arterial_blood_pressure_systolic",
+                                   "Mean BP (arterial)" =
+                                     "arterial_blood_pressure_mean"),
+                    selected = "heart_rate")
       ),
 
       mainPanel(
@@ -113,11 +118,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
 server <- function(input, output) {
 
   output$admitPlot <- renderPlot({
-    data <- switch(input$admit_var,
-                   "First Care Unit" = "first_careunit",
-                   "Last Care Unit" = "last_careunit",
-                   "Admission Type" = "admission_type",
-                   "Admission Location" = "admission_location")
+    data <- input$admit_var
     
     ggplot(icu_cohort) +
       geom_bar(aes_string(data))
@@ -125,15 +126,7 @@ server <- function(input, output) {
   
   
   output$patientPlot <- renderPlot({
-    data <- switch(input$patient_var,
-                   "Insurance" = "insurance",
-                    "Language" = "language",
-                    "Marital Status" = "marital_status",
-                    "Ethnicity" = "ethnicity",
-                    "Gender" = "gender",
-                    "Age" = "age_at_adm",
-                    "Death in 30 Days?" = "death_in_month")
-                   
+    data <- input$patient_var
                    
     ggplot(icu_cohort) +
       geom_bar(aes_string(data))
@@ -141,36 +134,15 @@ server <- function(input, output) {
   })
   
   output$labPlot <- renderPlot({
-    data <- switch(input$lab_var,
-                   "Bicarbonate" = "bicarbonate",
-                   "Calcium" = "calcium",
-                   "Chloride" = "chloride",
-                   "Creatinine" = "creatinine",
-                   "Glucose" = "glucose",
-                   "Magnesium" = "magnesium",
-                   "Potassium" = "potassium",
-                   "Sodium" = "sodium",
-                   "Hemacrit" = "hemacrit",
-                   "White Blood Cells" = "wbc",
-                   "Lactate" = "lactate")
+    data <- input$lab_var
+
     
     ggplot(icu_cohort) +
       geom_histogram(aes_string(data))
   })
    
   output$chartPlot <- renderPlot({
-    data <- switch(input$chart_var,
-                   "Heart Rate" = "heart_rate",
-                    "Systolic BP (non-invasive)" = 
-                             "non_invasive_blood_pressure_systolic",
-                    "Mean BP (non-invasive)" = 
-                              "non_invasive_blood_pressure_mean",
-                    "Respiratory Rate" = "respiratory_rate",
-                    "Temperature (F)" = "temperature_fahrenheit",
-                    "Systolic BP (arterial)" =
-                              "arterial_blood_pressure_systolic",
-                    "Mean BP (arterial)" =
-                              "arterial_blood_pressure_mean")
+    data <- input$chart_var
     
     ggplot(icu_cohort) +
       geom_histogram(aes_string(data))
