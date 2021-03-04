@@ -122,47 +122,49 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
       )
     )
   ),
+  navbarMenu("Bivariate Distributions",
+       tabPanel("Scatterplots",
+          titlePanel("Scatterplots"),
+          sidebarLayout(
+            sidebarPanel(
+              selectInput("var1", "Choose variable for x-axis", 
+                          choices = c(lab_list, chart_list),
+                          selected = "heart_rate"),
+              
+              selectInput("var2", "Choose variable for y-axis", 
+                          choices = c(lab_list, chart_list),
+                          selected = "respiratory_rate"),
+              
+              
+            ),
+                  
+          mainPanel(
+            plotOutput(outputId = "bivariatePlot")
+          )
+          )
+        ),
+             
+             
+         tabPanel("Boxplots",
+            titlePanel("Boxplots"),
+            sidebarLayout(
+              sidebarPanel(
+                selectInput("boxplot_var1", "Choose variable for x-axis", 
+                            choices = c(patient_list),
+                            selected = "insurance"),
+                
+                selectInput("boxplot_var2", "Choose variable for y-axis", 
+                            choices = c(lab_list, chart_list),
+                            selected = "bicarbonate"),
+                
+              ),
+              
+              mainPanel(
+                plotOutput(outputId = "boxPlot")
+              )
+            )              
+         )
   
-  tabPanel("Bivariate Distributions",
-    titlePanel("Bivariate Distributions"),
-    sidebarLayout(
-      sidebarPanel(
-        selectInput("var1", "Choose variable for x-axis", 
-                    choices = c(lab_list, chart_list),
-                    selected = "heart_rate"),
-        
-        selectInput("var2", "Choose variable for y-axis", 
-                    choices = c(lab_list, chart_list),
-                    selected = "respiratory_rate"),
-        
-        
-      ),
-      
-      mainPanel(
-        plotOutput(outputId = "bivariatePlot")
-      )
-    )
-  ),
-    
-    
-    tabPanel("Boxplots",
-             titlePanel("Boxplot"),
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput("boxplot_var1", "Choose variable for x-axis", 
-                             choices = c(patient_list),
-                             selected = "insurance"),
-                 
-                 selectInput("boxplot_var2", "Choose variable for y-axis", 
-                             choices = c(lab_list, chart_list),
-                             selected = "bicarbonate"),
-                 
-               ),
-               
-               mainPanel(
-                 plotOutput(outputId = "boxPlot")
-               )
-          )         
     )
 )
   
