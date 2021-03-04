@@ -832,7 +832,8 @@ if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
 <pre class="r"><code>icustays_tble %&gt;% 
   group_by(subject_id) %&gt;%
   #filter out only first observation per patient
-  filter(rank(intime) == 1) %&gt;% 
+  filter(rank(intime) == 1) %&gt;%
+  ungroup() %&gt;%
   #join in admissions and patients data tables
   left_join(admissions_tble, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
   left_join(patients_tble, by = c(&quot;subject_id&quot;)) %&gt;%
@@ -845,13 +846,15 @@ if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
   #show SQL query and collect as tibble
   show_query() %&gt;%
   collect() %&gt;%
+  as_tibble() %&gt;%
   #create indicator variable for death in 30 days
   mutate(time_to_death = as.duration(deathtime - intime),
          death_in_month = ifelse(is.na(time_to_death) | time_to_death &gt; ddays(30),
                                     FALSE, TRUE)) %&gt;%
   select(-time_to_death) %&gt;%
+
   #write to RDS file for use with Shiny app
-  write_rds(&quot;mimiciv_shiny/icu_cohort.rds&quot;)</code></pre>
+  saveRDS(&quot;mimiciv_shiny/icu_cohort.rds&quot;)</code></pre>
 <pre><code>## Joining, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)</code></pre>
 <pre><code>## Joining, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;, &quot;stay_id&quot;)</code></pre>
 <pre><code>## &lt;SQL&gt;
@@ -877,9 +880,6 @@ if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
 ## ) &quot;LHS&quot;
 ## LEFT JOIN &quot;public&quot;.&quot;mimic_chartevents_icu&quot; AS &quot;RHS&quot;
 ## ON (&quot;LHS&quot;.&quot;subject_id&quot; = &quot;RHS&quot;.&quot;subject_id&quot; AND &quot;LHS&quot;.&quot;hadm_id&quot; = &quot;RHS&quot;.&quot;hadm_id&quot; AND &quot;LHS&quot;.&quot;stay_id&quot; = &quot;RHS&quot;.&quot;stay_id&quot;)</code></pre>
-<pre class="r"><code>  # mutate(death_in_month = ifelse(is.na(deathtime - intime) | 
-  #                                  as.duration(deathtime - intime) &gt; ddays(30), 
-  #                                FALSE, TRUE)) %&gt;%</code></pre>
 <p>Close database connection and clear workspace.</p>
 <pre class="r"><code>dbDisconnect(con)</code></pre>
 <pre><code>## [1] TRUE</code></pre>

@@ -135,7 +135,8 @@ if (!dir.exists("mimiciv_shiny")) {
 icustays_tble %>% 
   group_by(subject_id) %>%
   #filter out only first observation per patient
-  filter(rank(intime) == 1) %>% 
+  filter(rank(intime) == 1) %>%
+  ungroup() %>%
   #join in admissions and patients data tables
   left_join(admissions_tble, by = c("subject_id", "hadm_id")) %>%
   left_join(patients_tble, by = c("subject_id")) %>%
@@ -148,17 +149,15 @@ icustays_tble %>%
   #show SQL query and collect as tibble
   show_query() %>%
   collect() %>%
+  as_tibble() %>%
   #create indicator variable for death in 30 days
   mutate(time_to_death = as.duration(deathtime - intime),
          death_in_month = ifelse(is.na(time_to_death) | time_to_death > ddays(30),
                                     FALSE, TRUE)) %>%
   select(-time_to_death) %>%
-  #write to RDS file for use with Shiny app
-  write_rds("mimiciv_shiny/icu_cohort.rds")
 
-  # mutate(death_in_month = ifelse(is.na(deathtime - intime) | 
-  #                                  as.duration(deathtime - intime) > ddays(30), 
-  #                                FALSE, TRUE)) %>%
+  #write to RDS file for use with Shiny app
+  saveRDS("mimiciv_shiny/icu_cohort.rds")
 ```
 
 
