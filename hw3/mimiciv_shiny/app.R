@@ -3,9 +3,7 @@ library(tidyverse)
 
 #icu_cohort = readRDS("hw3/mimiciv_shiny/icu_cohort.rds")
 
-
 #Ideas: add option for pie chart? 
-#Bivariate Distributions?
 #Missing Data? 
 
 #Create list of variable names and meanings for each category, for use in 
@@ -35,7 +33,7 @@ lab_list <-  list("Bicarbonate" = "bicarbonate",
                   "Magnesium" = "magnesium",
                   "Potassium" = "potassium",
                   "Sodium" = "sodium",
-                  "Hemacrit" = "hemacrit",
+                  "Hematocrit" = "hematocrit",
                   "White Blood Cells" = "wbc",
                   "Lactate" = "lactate")
 
@@ -76,7 +74,11 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
       sidebarPanel( 
         selectInput("patient_var", "Choose variable of interest",
                     choices = patient_list,
-                    selected = "insurance")
+                    selected = "insurance"),
+        
+        radioButtons("plot_type", "Choose type of visualization",
+                     choices = c("Bar Plot", "Pie Chart"), 
+                     selected = "Bar Plot")
       ),
       
       mainPanel(
@@ -155,9 +157,17 @@ server <- function(input, output) {
   
   output$patientPlot <- renderPlot({
     data <- input$patient_var
-                   
-    ggplot(icu_cohort) +
-      geom_bar(aes_string(data))
+    viz <- input$plot_type
+    if(viz == "Bar Plot"){
+      ggplot(icu_cohort) +
+        geom_bar(aes_string(data))
+    } else {
+      ggplot(icu_cohort, aes_string(x = factor(1), fill = data)) +
+        geom_bar(width=1) +
+        coord_polar("y") +
+        labs(title = data, x = NULL)
+    }              
+    
     
   })
   
