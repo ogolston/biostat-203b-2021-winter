@@ -1,5 +1,6 @@
 library(shiny)
 library(tidyverse)
+library(bslib)
 
 #icu_cohort = readRDS("hw3/mimiciv_shiny/icu_cohort.rds")
 
@@ -53,6 +54,8 @@ chart_list <- list("Heart Rate" = "heart_rate",
 
 
 ui <- navbarPage("MIMIC-IV Data Dashboard",
+  theme = bs_theme(version = 4, bootswatch = "spacelab"),
+  
   tabPanel("Admissions",
      titlePanel("Admissions Data"),
      sidebarLayout(
