@@ -51,6 +51,21 @@ chart_list <- list("Heart Rate" = "heart_rate",
                      "arterial_blood_pressure_mean")
 
 
+color_key_labs <- list("Red" = "tomato", 
+                  "Yellow" = "darkgoldenrod1", 
+                  "Blue" = "dodgerblue", 
+                  "Violet" = "violet",
+                  "Pink" = "palevioletred1",
+                  "Grey" = "lightgrey")
+
+
+color_key_charts <- list("Orange" = "sienna1",
+                         "Green" = "lightgreen", 
+                         "Cyan" = "cyan1",
+                        "Purple" = "orchid",
+                       "Brown" = "burlywood1",
+                       "Grey" = "lightgrey")
+
 
 
 ui <- navbarPage("MIMIC-IV Data Dashboard",
@@ -69,7 +84,8 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                       selected = "Bar Plot")
        ),
        mainPanel(
-         plotOutput(outputId = "admitPlot")
+         plotOutput(outputId = "admitPlot"),
+         tableOutput("summary"),
        )
     )   
   ),
@@ -99,7 +115,11 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
       sidebarPanel( 
         selectInput("lab_var", "Choose lab measurement of interest", 
                     choices = lab_list,
-                    selected = "bicarbonate")
+                    selected = "bicarbonate"),
+        
+        selectInput("lab_color", "Optional: Choose color for plot", 
+                    choices = color_key_labs,
+                    selected = "lightgrey"),
       ),
       
       mainPanel(
@@ -114,7 +134,13 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
       sidebarPanel(
         selectInput("chart_var", "Choose chart value of interest", 
                     choices = chart_list,
-                    selected = "heart_rate")
+                    selected = "heart_rate"),
+        
+        selectInput("chart_color", "Optional: Choose color for plot", 
+                    choices = color_key_charts,
+                    selected = "lightgrey"),
+        
+        
       ),
 
       mainPanel(
@@ -187,8 +213,13 @@ server <- function(input, output) {
         geom_bar(width = 1) +
         coord_polar("y") +
         theme_void()
-    }   
+    }
     
+  })
+  
+  output$summary <- renderTable({
+    data <- input$admit_var
+    table(icu_cohort[data])
   })
   
   
@@ -214,14 +245,16 @@ server <- function(input, output) {
 
     
     ggplot(icu_cohort) +
-      geom_histogram(aes_string(data))
+      geom_histogram(aes_string(data), color = "black", 
+                     fill = input$lab_color)
   })
    
   output$chartPlot <- renderPlot({
     data <- input$chart_var
     
     ggplot(icu_cohort) +
-      geom_histogram(aes_string(data))
+      geom_histogram(aes_string(data), color = "black", 
+                     fill = input$chart_color)
     
   })
   
