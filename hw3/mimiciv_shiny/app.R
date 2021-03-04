@@ -3,7 +3,6 @@ library(tidyverse)
 
 #icu_cohort = readRDS("hw3/mimiciv_shiny/icu_cohort.rds")
 
-#Ideas: add option for pie chart? 
 #Missing Data? 
 
 #Create list of variable names and meanings for each category, for use in 
@@ -17,7 +16,7 @@ admissions_list <- list("First Care Unit" = "first_careunit",
 
 
 patient_list <-  list("Insurance" = "insurance",
-                       "Language" = "langauge",
+                       "Language" = "language",
                        "Marital Status" = "marital_status",
                        "Ethnicity" = "ethnicity",
                        "Gender" ="gender",
@@ -158,14 +157,15 @@ server <- function(input, output) {
   output$patientPlot <- renderPlot({
     data <- input$patient_var
     viz <- input$plot_type
+    
     if(viz == "Bar Plot"){
       ggplot(icu_cohort) +
         geom_bar(aes_string(data))
     } else {
       ggplot(icu_cohort, aes_string(x = factor(1), fill = data)) +
-        geom_bar(width=1) +
+        geom_bar(width = 1) +
         coord_polar("y") +
-        labs(title = data, x = NULL)
+        theme_void()
     }              
     
     
