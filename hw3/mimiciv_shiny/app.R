@@ -135,17 +135,35 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                     choices = c(lab_list, chart_list),
                     selected = "respiratory_rate"),
         
-        selectInput("var3", "Optional: Choose variable for color", 
-                    choices = c(patient_list, admissions_list),
-                    selected = "gender"),
         
       ),
       
       mainPanel(
         plotOutput(outputId = "bivariatePlot")
       )
-    )         
-  )
+    )
+  ),
+    
+    
+    tabPanel("Boxplots",
+             titlePanel("Boxplot"),
+             sidebarLayout(
+               sidebarPanel(
+                 selectInput("boxplot_var1", "Choose variable for x-axis", 
+                             choices = c(patient_list),
+                             selected = "insurance"),
+                 
+                 selectInput("boxplot_var2", "Choose variable for y-axis", 
+                             choices = c(lab_list, chart_list),
+                             selected = "bicarbonate"),
+                 
+               ),
+               
+               mainPanel(
+                 plotOutput(outputId = "boxPlot")
+               )
+          )         
+    )
 )
   
   
@@ -209,12 +227,20 @@ server <- function(input, output) {
   output$bivariatePlot <- renderPlot({
     var1 <- input$var1
     var2 <- input$var2
-    var3 <- input$var3
+
+    icu_cohort %>%
+      ggplot() +
+      geom_jitter(aes_string(var1, var2))
+    
+  })
+  
+  output$boxPlot <- renderPlot({
+    var1 <- input$boxplot_var1
+    var2 <- input$boxplot_var2
     
     icu_cohort %>%
       ggplot() +
-      geom_jitter(aes_string(var1, var2, color=var3))
-    
+      geom_boxplot(aes_string(var1, var2))
   })
   
 }
