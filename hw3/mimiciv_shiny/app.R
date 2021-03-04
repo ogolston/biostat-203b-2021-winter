@@ -59,7 +59,11 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
          sidebarPanel(
          selectInput("admit_var", "Choose variable of interest", 
                      choices = admissions_list,
-                     selected = "first_careunit")
+                     selected = "first_careunit"),
+         
+         radioButtons("admit_plot_type", "Choose type of visualization",
+                      choices = list("Bar Plot", "Pie Chart"), 
+                      selected = "Bar Plot")
        ),
        mainPanel(
          plotOutput(outputId = "admitPlot")
@@ -76,7 +80,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                     selected = "insurance"),
         
         radioButtons("plot_type", "Choose type of visualization",
-                     choices = c("Bar Plot", "Pie Chart"), 
+                     choices = list("Bar Plot", "Pie Chart"), 
                      selected = "Bar Plot")
       ),
       
@@ -130,7 +134,8 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
         
         selectInput("var3", "Optional: Choose variable for color", 
                     choices = c(patient_list, admissions_list),
-                    selected = "gender")
+                    selected = "gender"),
+        
       ),
       
       mainPanel(
@@ -148,10 +153,20 @@ server <- function(input, output) {
 
   output$admitPlot <- renderPlot({
     data <- input$admit_var
+    viz <- input$admit_plot_type
+
+    if(viz == "Bar Plot"){
+      ggplot(icu_cohort) +
+        geom_bar(aes_string(data)) + 
+        coord_flip()
+    } else {
+      ggplot(icu_cohort, aes_string(x = factor(1), fill = data)) +
+        geom_bar(width = 1) +
+        coord_polar("y") +
+        theme_void()
+    }   
     
-    ggplot(icu_cohort) +
-      geom_bar(aes_string(data))
-    })
+  })
   
   
   output$patientPlot <- renderPlot({
@@ -193,8 +208,9 @@ server <- function(input, output) {
     var2 <- input$var2
     var3 <- input$var3
     
-    ggplot(icu_cohort) +
-      geom_point(aes_string(var1, var2, color=var3))
+    icu_cohort %>%
+      ggplot() +
+      geom_jitter(aes_string(var1, var2, color=var3))
     
   })
   
