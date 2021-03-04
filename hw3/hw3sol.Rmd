@@ -137,15 +137,21 @@ icustays_tble %>%
   filter(rank(intime) == 1)  %>%
   left_join(admissions_tble, by = c("subject_id", "hadm_id")) %>%
   left_join(patients_tble, by = c("subject_id")) %>%
-  mutate(age_at_adm = anchor_age + year(admittime) - anchor_year) %>%
+  mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %>%
   filter(age_at_adm >= 18) %>%
   left_join(labevents_tble) %>%
   left_join(chartevents_tble) %>%
   show_query() %>%
   collect() %>%
-  mutate(death_in_month = ifelse(is.na(deathtime - admittime) | 
-                                   deathtime - admittime > 30, FALSE, TRUE)) %>%
+  mutate(time_to_death = as.duration(deathtime - intime),
+         death_in_30 = ifelse(is.na(time_to_death) | time_to_death > ddays(30), 
+                                    FALSE, TRUE)) %>%
+  select(-time_to_death) %>%
   write_rds("mimiciv_shiny/icu_cohort.rds")
+
+  # mutate(death_in_month = ifelse(is.na(deathtime - intime) | 
+  #                                  as.duration(deathtime - intime) > ddays(30), 
+  #                                FALSE, TRUE)) %>%
 ```
 
 
