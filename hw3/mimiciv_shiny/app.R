@@ -6,15 +6,11 @@ library(bslib)
 
 #Missing Data? 
 
-#Create list of variable names and meanings for each category, for use in 
-#dropdown menus 
-
+# Predefine variable lists for use in dropdown menus ---------------------------
 admissions_list <- list("First Care Unit" = "first_careunit",
                         "Last Care Unit" = "last_careunit",
                         "Admission Type" = "admission_type",
                         "Admission Location" = "admission_location")
-
-
 
 patient_list <-  list("Insurance" = "insurance",
                        "Language" = "language",
@@ -71,43 +67,77 @@ color_key_charts <- list("Orange" = "sienna1",
 ui <- navbarPage("MIMIC-IV Data Dashboard",
   theme = bs_theme(version = 4, bootswatch = "spacelab"),
   
-  tabPanel("Admissions",
-     titlePanel("Admissions Data"),
-     sidebarLayout(
-         sidebarPanel(
-         selectInput("admit_var", "Choose variable of interest", 
-                     choices = admissions_list,
-                     selected = "first_careunit"),
-         
-         radioButtons("admit_plot_type", "Choose type of visualization",
-                      choices = list("Bar Plot", "Pie Chart"), 
-                      selected = "Bar Plot")
-       ),
-       mainPanel(
-         plotOutput(outputId = "admitPlot"),
-         tableOutput("summary"),
+  tabPanel("Admissions",          
+     tabsetPanel(
+     type = "tabs",
+        tabPanel("Plots",
+          sidebarLayout(
+               sidebarPanel(
+               selectInput("admit_var", "Choose variable of interest", 
+                           choices = admissions_list,
+                           selected = "first_careunit"),
+               
+               radioButtons("admit_plot_type", "Choose type of visualization",
+                            choices = list("Bar Plot", "Pie Chart"), 
+                            selected = "Bar Plot")
+             ),
+             
+             mainPanel(
+               plotOutput(outputId = "admitPlot"),
+             )
+           ),
+        ),
+        tabPanel("Table",
+          sidebarLayout(
+            sidebarPanel(
+              selectInput("admit_var_sum", "Choose variable of interest", 
+                           choices = admissions_list,
+                           selected = "first_careunit"),
+               
+             ),
+             mainPanel(
+               tableOutput(outputId = "summary")
+             )        
+          )
+        )
+     )
+  ),  
+  tabPanel("Patients", 
+    tabsetPanel(
+    type = "tabs",
+        tabPanel("Plots",
+          sidebarLayout(
+            sidebarPanel( 
+               selectInput("patient_var", "Choose variable of interest",
+                           choices = patient_list,
+                           selected = "insurance"),
+               
+               radioButtons("plot_type", "Choose type of visualization",
+                            choices = list("Bar Plot", "Pie Chart"), 
+                            selected = "Bar Plot")
+             ),
+               
+             mainPanel(
+               plotOutput(outputId = "patientPlot")
+             )
+           )
+         ),
+         tabPanel("Table",
+            sidebarLayout(
+              sidebarPanel(
+                selectInput("patient_var_sum", "Choose variable of interest", 
+                            choices = patient_list,
+                            selected = "insurance"),
+                
+              ),
+              mainPanel(
+                tableOutput(outputId = "patient_summary")
+              )        
+            )
+         )
        )
-    )   
-  ),
+    ),
   
-  tabPanel("Patients",
-    titlePanel("Patients Data"),
-    sidebarLayout(
-      sidebarPanel( 
-        selectInput("patient_var", "Choose variable of interest",
-                    choices = patient_list,
-                    selected = "insurance"),
-        
-        radioButtons("plot_type", "Choose type of visualization",
-                     choices = list("Bar Plot", "Pie Chart"), 
-                     selected = "Bar Plot")
-      ),
-      
-      mainPanel(
-        plotOutput(outputId = "patientPlot")
-      )
-    )
-  ),
   
   tabPanel("Lab Events",
     titlePanel("Lab Event Data"),
@@ -117,7 +147,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                     choices = lab_list,
                     selected = "bicarbonate"),
         
-        selectInput("lab_color", "Optional: Choose color for plot", 
+        selectInput("lab_color", "Choose color for plot", 
                     choices = color_key_labs,
                     selected = "lightgrey"),
       ),
@@ -138,8 +168,10 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
         
         selectInput("chart_color", "Optional: Choose color for plot", 
                     choices = color_key_charts,
-                    selected = "lightgrey"),
+                    selected = "lightgrey")
         
+        #textInput("Optional: x_min", "Choose x-min", ""),
+        #textInput("Optional: x_max", "Choose x-max", ""),
         
       ),
 
@@ -148,19 +180,24 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
       )
     )
   ),
+  
+  
   navbarMenu("Bivariate Distributions",
        tabPanel("Scatterplots",
           titlePanel("Scatterplots"),
           sidebarLayout(
             sidebarPanel(
               selectInput("var1", "Choose variable for x-axis", 
-                          choices = c(lab_list, chart_list),
+                          choices = c(lab_list, 
+                                      chart_list, 
+                                      "Age" = "age_at_adm"),
                           selected = "heart_rate"),
               
               selectInput("var2", "Choose variable for y-axis", 
-                          choices = c(lab_list, chart_list),
-                          selected = "respiratory_rate"),
-              
+                          choices = c(lab_list, 
+                                      chart_list,
+                                      "Age" = "age_at_adm"),
+                          selected = "respiratory_rate")
               
             ),
                   
@@ -218,8 +255,12 @@ server <- function(input, output) {
   })
   
   output$summary <- renderTable({
-    data <- input$admit_var
-    table(icu_cohort[data])
+    data <- input$admit_var_sum
+    
+    icu_cohort %>%
+      group_by(get(data)) %>%
+      arrange() %>%
+      count()
   })
   
   
@@ -236,8 +277,16 @@ server <- function(input, output) {
         coord_polar("y") +
         theme_void()
     }              
-    
-    
+
+  })
+  
+  output$patient_summary <- renderTable({
+    data <- input$patient_var_sum
+
+    icu_cohort %>%
+      group_by(get(data)) %>%
+      arrange() %>%
+      count()
   })
   
   output$labPlot <- renderPlot({
@@ -252,7 +301,8 @@ server <- function(input, output) {
   output$chartPlot <- renderPlot({
     data <- input$chart_var
     
-    ggplot(icu_cohort) +
+    icu_cohort %>%
+      ggplot() +
       geom_histogram(aes_string(data), color = "black", 
                      fill = input$chart_color)
     
@@ -264,6 +314,7 @@ server <- function(input, output) {
     var2 <- input$var2
 
     icu_cohort %>%
+      filter(!is.na(get(var1)) & !is.na(get(var2))) %>%
       ggplot() +
       geom_jitter(aes_string(var1, var2))
     
