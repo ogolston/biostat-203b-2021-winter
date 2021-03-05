@@ -131,6 +131,9 @@ if (!dir.exists("mimiciv_shiny")) {
 }
 ```
 
+
+**Solution**: The following pipe completes the requested steps and saves the final tibble, which has admissions data, patient data, chart events, lab events, and a "death in 30 days" indicator for the first ICU stay of each patient.
+
 ```{r}
 icustays_tble %>% 
   group_by(subject_id) %>%
@@ -170,3 +173,19 @@ rm(list = ls())
 ## Q2. Shiny app
 
 Develop a Shiny app for exploring the ICU cohort data created in Q1. The app should reside in the `mimiciv_shiny` folder. The app should provide easy access to the graphical and numerical summaries of variables (demographics, lab measurements, vitals) in the ICU cohort.
+
+
+**Solution**: See `app.R` in the `mimiciv_shiny` folder for my Shiny app. 
+My app has 3 main tabs, each with subtabs:  
+
+1. `Categorical Data` tab can be used for exploring demographic and admission type variables.
+    + The `Plots` subtab is for creating pie charts and bar charts.  
+    + The `Table` subtab is for creating frequency tables.
+2. `Quantitative Data` tab can be used for exploring numeric variables, including all chart and lab events, as well as age. 
+    + The `Plots` subtab allows users to create histograms. There is an optional feature for changing the x-axis, as the default plots are often hard to interpret due to outliers. 
+    + The `Tables` subtab allows users to see summary statistics for each variable.
+3. `Bivariate Distributions` tab houses options for seeing how the variables are jointly distributed. 
+    + The `Scatterplots` subtab is used for plotting two continuous variables. The x-axis and y-axis can optionally be adjusted, and users can add a color indicator for `death in month` or `gender`.
+    + The `Boxplots` subtab can be used to explore the relationship between a categorical and a continuous variable. 
+
+When creating the Shiny app, Dr. Zhou's lecture notes, the RStudio Shiny tutorials [accessed here](https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/), and the Shiny [gallery](https://shiny.rstudio.com/gallery/) were an immense help for getting ideas and code structure for the app layout and features. 

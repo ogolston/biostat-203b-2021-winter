@@ -829,6 +829,7 @@ dbname &lt;- &#39;mimiciv&#39;
 if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
   dir.create(&quot;mimiciv_shiny&quot;)
 }</code></pre>
+<p><strong>Solution</strong>: The following pipe completes the requested steps and saves the final tibble, which has admissions data, patient data, chart events, lab events, and a “death in 30 days” indicator for the first ICU stay of each patient.</p>
 <pre class="r"><code>icustays_tble %&gt;% 
   group_by(subject_id) %&gt;%
   #filter out only first observation per patient
@@ -888,6 +889,26 @@ if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
 <div id="q2.-shiny-app" class="section level2">
 <h2>Q2. Shiny app</h2>
 <p>Develop a Shiny app for exploring the ICU cohort data created in Q1. The app should reside in the <code>mimiciv_shiny</code> folder. The app should provide easy access to the graphical and numerical summaries of variables (demographics, lab measurements, vitals) in the ICU cohort.</p>
+<p><strong>Solution</strong>: See <code>app.R</code> in the <code>mimiciv_shiny</code> folder for my Shiny app. My app has 3 main tabs, each with subtabs:</p>
+<ol style="list-style-type: decimal">
+<li><code>Categorical Data</code> tab can be used for exploring demographic and admission type variables.
+<ul>
+<li>The <code>Plots</code> subtab is for creating pie charts and bar charts.<br />
+</li>
+<li>The <code>Table</code> subtab is for creating frequency tables.</li>
+</ul></li>
+<li><code>Quantitative Data</code> tab can be used for exploring numeric variables, including all chart and lab events, as well as age.
+<ul>
+<li>The <code>Plots</code> subtab allows users to create histograms. There is an optional feature for changing the x-axis, as the default plots are often hard to interpret due to outliers.</li>
+<li>The <code>Tables</code> subtab allows users to see summary statistics for each variable.</li>
+</ul></li>
+<li><code>Bivariate Distributions</code> tab houses options for seeing how the variables are jointly distributed.
+<ul>
+<li>The <code>Scatterplots</code> subtab is used for plotting two continuous variables. The x-axis and y-axis can optionally be adjusted, and users can add a color indicator for <code>death in month</code> or <code>gender</code>.</li>
+<li>The <code>Boxplots</code> subtab can be used to explore the relationship between a categorical and a continuous variable.</li>
+</ul></li>
+</ol>
+<p>When creating the Shiny app, Dr. Zhou’s lecture notes, the RStudio Shiny tutorials <a href="https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/">accessed here</a>, and the Shiny <a href="https://shiny.rstudio.com/gallery/">gallery</a> were an immense help for getting ideas and code structure for the app layout and features.</p>
 </div>
 
 
