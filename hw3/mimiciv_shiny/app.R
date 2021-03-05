@@ -81,20 +81,20 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
           )
         ),
      
-     tabPanel("Table",
+      tabPanel("Table",
         sidebarLayout(
           sidebarPanel(
             selectInput("cat_var_sum", "Choose variable of interest", 
                          choices = categorical_list,
                          selected = "first_careunit")
-           ),
+            ),
           
-           mainPanel(
-             tableOutput(outputId = "catSummary")
-           )        
-         )
-       )
-     )
+          mainPanel(
+            tableOutput(outputId = "catSummary")
+          )        
+        ) 
+      )
+    )
   ),  
   
   tabPanel("Quantitative Variables",  
@@ -111,7 +111,10 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
             
             selectInput("plot_color", "Choose color for plot", 
                         choices = color_key,
-                        selected = "tomato")
+                        selected = "tomato"),
+            
+            sliderInput("xvals", "Optional: set x-min and max", 0, 500,
+                        c(0, 500)) 
           ),
           
           mainPanel(
@@ -121,19 +124,19 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
       ),
       
       tabPanel("Table",
-         sidebarLayout(
-           sidebarPanel(
-             selectInput("num_var_sum", "Choose variable of interest", 
+        sidebarLayout(
+          sidebarPanel(
+            selectInput("num_var_sum", "Choose variable of interest", 
                          choices = numeric_list,
                          selected = "age_at_adm")
              
-           ),
+          ),
            
-           mainPanel(
-             tableOutput(outputId = "numSummary")
-           )        
-         )
-       )
+          mainPanel(
+            tableOutput(outputId = "numSummary")
+          )        
+        )
+      )
     )
   ),
   
@@ -177,7 +180,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
         )              
       )
     )
-   )
+  )
   
 )
 
@@ -220,11 +223,13 @@ server <- function(input, output) {
   output$numPlot <- renderPlot({
     data <- input$num_var
     name <- names(which(numeric_list == data))
-    
+    x_min <- input$xvals[1]
+    x_max <- input$xvals[2]
 
     ggplot(icu_cohort) +
       geom_histogram(aes_string(data), color = "black", 
-                     fill = input$plot_color)
+                     fill = input$plot_color) +
+      xlim(x_min, x_max)
   })
   
   
