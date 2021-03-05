@@ -209,13 +209,30 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
      tabPanel("Boxplots",
         sidebarLayout(
           sidebarPanel(
-            selectInput("boxplot_var1", "Choose variable for x-axis", 
+            selectInput("boxplot_cat", "Choose grouping variable", 
                         choices = categorical_list,
                         selected = "death_in_month"),
             
-            selectInput("boxplot_var2", "Choose variable for y-axis", 
+            selectInput("boxplot_num", "Choose numeric outcome variable", 
                         choices = numeric_list,
-                        selected = "bicarbonate")
+                        selected = "bicarbonate"),
+            
+            radioButtons("provide_axis_box", "Provide custom axis?", 
+                         c("Use default axis", "Create custom axis"),
+                         "Use default axis"),
+            
+            conditionalPanel(
+              condition = "input.provide_axis_box == 'Create custom axis'",
+              
+              helpText("Use slider below to adjust axis limits. This
+                       can help visualization when there are outliers, but 
+                       will not remove those values. You can return
+                       to default by clicking 'Use default axis' above."),
+              
+              sliderInput("xvals_box", "Set x-min and max", 0, 600,
+                          c(0, 100))
+            )
+            
           ),
           
           mainPanel(
@@ -229,7 +246,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
   tabPanel("About",
     titlePanel("About MIMIC-IV and this App"),
     h6("Data in this app comes from the MIMIC-IV dataset, which is derived from 
-    health records from admissions to a medical center in Boston, 
+    several years of health records for a medical center in Boston, 
     Massachusetts.", br(), "This dashboard allows exploration of admissions, 
     demographic, lab, and chart data for the ICU stays of 50,048 
     unique adult patients.", br(), br(), "All data is deidentified and use 
@@ -373,21 +390,33 @@ server <- function(input, output) {
   })
   
   output$boxPlot <- renderPlot({
-    var1 <- input$boxplot_var1
-    var2 <- input$boxplot_var2
+    cat <- input$boxplot_cat
+    num <- input$boxplot_num
     
-    name1 <- names(which(categorical_list == var1))
-    name2 <- names(which(numeric_list == var2))
+    name_cat <- names(which(categorical_list == cat))
+    name_num <- names(which(numeric_list == num))
     
-    icu_cohort %>%
+    choice <- input$provide_axis_box
+    
+    x_min <- input$xvals_box[1]
+    x_max <- input$xvals_box[2]
+    
+    base_plot <- icu_cohort %>%
       ggplot() +
-      geom_boxplot(aes_string(var1, var2)) +
-      labs(x = name1, y = name2, 
-           title = str_c("Distribution of ", name2, " by ", name1)) +
-      coord_flip() +
+      geom_boxplot(aes_string(num, cat)) +
+      labs(x = name_num, y = name_cat, 
+           title = str_c("Distribution of ", name_num, " by ", name_cat)) +
       theme(axis.title = element_text(size = 16),
             axis.text = element_text(size = 14),
-            plot.title = element_text(size = 16, face = "bold"))
+            plot.title = element_text(size = 16, face = "bold")) 
+    
+    if(choice == "Use default axis") {
+      base_plot
+    } else {
+      base_plot +
+        coord_cartesian(xlim = input$xvals_box) 
+    }
+    
   })
   
 }
