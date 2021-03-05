@@ -2,10 +2,9 @@ library(shiny)
 library(tidyverse)
 library(bslib)
 
-#icu_cohort = readRDS("hw3/mimiciv_shiny/icu_cohort.rds")
+icu_cohort = readRDS("icu_cohort.rds")
 
 #Missing Data?
-#Finish Rmd file
 #push mimic 
 
 # Predefine variable lists for use in dropdown menus ------------------------
@@ -127,8 +126,8 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                        can help in cases of extreme outliers. You can return
                        to default by clicking 'Use default axis' above."),
               
-              sliderInput("xvals", "Set x-min and max", 0, 500,
-                          c(0, 500))
+              sliderInput("xvals", "Set x-min and max", 0, 600,
+                          c(0, 100))
             )
           ),
           
@@ -177,7 +176,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                                       "Gender" = "gender"),
                           selected = "NULL"),
               
-              radioButtons("scatter_provide_axis", "Provide custom axes?", 
+              radioButtons("scatter_provide_axis", "", 
                            c("Use default axes", "Create custom axes"),
                            "Use default axes"),
             
@@ -189,11 +188,11 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                          can return to default by clicking 'Use default axis' 
                          above."),
                 
-                sliderInput("scatter_xvals", "Set x-min and max:", 0, 500,
-                            c(0, 500)),
+                sliderInput("scatter_xvals", "Set x-min and max:", 0, 600,
+                            c(0, 100)),
                 
-                sliderInput("scatter_yvals", "Set y-min and max:", 0, 500,
-                            c(0, 500))
+                sliderInput("scatter_yvals", "Set y-min and max:", 0, 600,
+                            c(0, 100))
               )
               
               ),
@@ -221,6 +220,20 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
         )              
       )
     )
+  ),
+  
+  tabPanel("About",
+    titlePanel("About MIMIC-IV and this App"),
+    h6("Data in this app comes from the MIMIC-IV dataset, which has data for 
+    admissions to a medical center in Boston, Massachusetts.", br(),
+    "This dashboard allows exploration of admissions, demographic, lab, and chart 
+    data for the ICU stays of 50,048 unique adult patients.", br(), br(),
+    "All data is deidentified and use was authorized by MIT and", 
+    "documentation details are available", 
+    a("here", href="http://mimic-iv.mit.edu/docs/", target="_blank")), 
+
+    p("This app was created by Olivia Golston for Biostatistics 203B at UCLA, 
+    using RStudio and Shiny.")      
   )
   
 )
