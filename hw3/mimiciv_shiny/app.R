@@ -172,7 +172,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
               
               selectInput("var3", "Optional: Choose variable for color", 
                           choices = list("None" = "NULL",
-                                      "Death in 30 days?" = "death_in_month",
+                                      "Death in 30 days" = "death_in_month",
                                       "Gender" = "gender"),
                           selected = "NULL"),
               
@@ -249,13 +249,16 @@ server <- function(input, output) {
       ggplot(icu_cohort) +
         geom_bar(aes_string(data), color = "black", fill = "deepskyblue") + 
         coord_flip() +
-        labs(title = str_c("Distribution of ", name), x = name)
+        labs(title = str_c(name), x = "") +
+        theme(axis.text = element_text(size = 14),
+              plot.title = element_text(size = 16, face = "bold")) 
     } else {
       ggplot(icu_cohort, aes_string(x = factor(1), fill = data)) +
         geom_bar(width = 1) +
         coord_polar("y") +
         theme_void() +
-        labs(title = str_c("Distribution of ", name), x = name)
+        labs(title = str_c("Distribution of ", name), x = "") +
+        theme(plot.title = element_text(size = 16, face = "bold"))
     }
     
   })
@@ -265,7 +268,7 @@ server <- function(input, output) {
     data <- input$cat_var_sum
     name <- names(which(categorical_list == data))
     
-    HTML(paste("<h3>", "Frequency table for ", name, "</h3>"))
+    HTML(paste("<h3>", "Frequency Table for ", name, "</h3>"))
   })
   
   
@@ -291,17 +294,20 @@ server <- function(input, output) {
     x_min <- input$xvals[1]
     x_max <- input$xvals[2]
     
+    
+    base_plot <-  ggplot(icu_cohort) +
+      geom_histogram(aes_string(data), color = "black", 
+                     fill = input$plot_color) +
+      labs(title = str_c("Distribution of ", name), x = name) +
+      theme(axis.title = element_text(size = 14),
+            plot.title = element_text(size = 16, face = "bold"))
+    
     if(choice == "Use default axis"){
-      ggplot(icu_cohort) +
-        geom_histogram(aes_string(data), color = "black", 
-                       fill = input$plot_color) +
-        labs(title = str_c("Distribution of ", name), x = name)
+      base_plot
+      
     } else {
-      ggplot(icu_cohort) +
-        geom_histogram(aes_string(data), color = "black", 
-                       fill = input$plot_color) +
-        xlim(x_min, x_max) +
-        labs(title = str_c("Distribution of ", name), x = name)
+      base_plot +         
+        xlim(x_min, x_max)
     }
   })
   
@@ -344,19 +350,19 @@ server <- function(input, output) {
     ymax <- input$scatter_yvals[2]
     
     
+    base_plot <- icu_cohort %>%
+      ggplot() +
+      geom_jitter(aes_string(var1, var2, color = var3)) +
+      labs(x = name1, y = name2, 
+           title = str_c(name2, " vs. ", name1)) +
+      theme(axis.title = element_text(size = 14),
+            plot.title = element_text(size = 16, face = "bold"))
+    
+    
     if(choice == "Use default axes"){
-      icu_cohort %>%
-        ggplot() +
-        geom_jitter(aes_string(var1, var2, color = var3)) +
-        labs(x = name1, y = name2, 
-             title = str_c(name2, " vs. ", name1))
-      
+      base_plot
     } else{
-      icu_cohort %>%
-        ggplot() +
-        geom_jitter(aes_string(var1, var2, color = var3)) +
-        labs(x = name1, y = name2, 
-             title = str_c(name2, " vs. ", name1)) +
+      base_plot +
         xlim(xmin, xmax) +
         ylim(ymin, ymax)
     }
@@ -373,8 +379,11 @@ server <- function(input, output) {
       ggplot() +
       geom_boxplot(aes_string(var1, var2)) +
       labs(x = name1, y = name2, 
-           title = str_c(name2, " grouped by ", name1))
-    
+           title = str_c(name2, " grouped by ", name1)) +
+      coord_flip() +
+      theme(axis.title = element_text(size = 16),
+            axis.text = element_text(size = 14),
+            plot.title = element_text(size = 16, face = "bold"))
   })
   
 }
