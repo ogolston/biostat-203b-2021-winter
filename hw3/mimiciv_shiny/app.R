@@ -107,13 +107,17 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
       tabPanel("Plots",
         sidebarLayout(
           sidebarPanel( 
-            selectInput("num_var", "Choose lab measurement of interest", 
+            selectInput("num_var", "Choose variable of interest", 
                         choices = numeric_list,
-                        selected = "bicarbonate"),
+                        selected = "age_at_adm"),
             
             selectInput("plot_color", "Choose color for plot", 
                         choices = color_key,
                         selected = "tomato"),
+            
+            numericInput("bins", "Adjust number of bins", 
+                        value = 30,
+                        min = 1, max = 100),
             
             radioButtons("provide_axis", "Provide custom axis?", 
                          c("Use default axis", "Create custom axis"),
@@ -207,7 +211,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
           sidebarPanel(
             selectInput("boxplot_var1", "Choose variable for x-axis", 
                         choices = categorical_list,
-                        selected = "insurance"),
+                        selected = "death_in_month"),
             
             selectInput("boxplot_var2", "Choose variable for y-axis", 
                         choices = numeric_list,
@@ -224,12 +228,12 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
   
   tabPanel("About",
     titlePanel("About MIMIC-IV and this App"),
-    h6("Data in this app comes from the MIMIC-IV dataset, which has data for 
-    admissions to a medical center in Boston, Massachusetts.", br(),
-    "This dashboard allows exploration of admissions, demographic, lab, and chart 
-    data for the ICU stays of 50,048 unique adult patients.", br(), br(),
-    "All data is deidentified and use was authorized by MIT and", 
-    "documentation details are available", 
+    h6("Data in this app comes from the MIMIC-IV dataset, which is derived from 
+    health records from admissions to a medical center in Boston, 
+    Massachusetts.", br(), "This dashboard allows exploration of admissions, 
+    demographic, lab, and chart data for the ICU stays of 50,048 
+    unique adult patients.", br(), br(), "All data is deidentified and use 
+    was authorized by MIT. Documentation details are available", 
     a("here", href="http://mimic-iv.mit.edu/docs/", target="_blank")), 
 
     p("This app was created by Olivia Golston for Biostatistics 203B at UCLA, 
@@ -294,10 +298,9 @@ server <- function(input, output) {
     x_min <- input$xvals[1]
     x_max <- input$xvals[2]
     
-    
     base_plot <-  ggplot(icu_cohort) +
       geom_histogram(aes_string(data), color = "black", 
-                     fill = input$plot_color) +
+                     fill = input$plot_color, bins = input$bins) +
       labs(title = str_c("Distribution of ", name), x = name) +
       theme(axis.title = element_text(size = 14),
             plot.title = element_text(size = 16, face = "bold"))
@@ -314,7 +317,7 @@ server <- function(input, output) {
   output$numSummaryTitle <- renderUI({
     name <- names(which(numeric_list == input$num_var_sum))
 
-    HTML(str_c("<h4>", "Summary statistics for ", name, "</h4>"))
+    HTML(str_c("<h4>", "Summary Statistics for ", name, "</h4>"))
   })
   
   output$numSummary <- renderTable({
@@ -322,7 +325,7 @@ server <- function(input, output) {
 
     tibble(
       Statistic = c("Min", "1st Quartile", "Median", "Mean", 
-                    "3rd Quartile", "Max", "# of NAs"),
+                    "3rd Quartile", "Max", "# of Measurements", "# of NAs"),
       
       Value = c(min(data, na.rm=T),
                  quantile(data, .25, na.rm=T),
@@ -330,6 +333,7 @@ server <- function(input, output) {
                  mean(data, na.rm=T),
                  quantile(data, .75, na.rm=T),
                  max(data, na.rm=T),
+                 sum(!is.na(data)),
                  sum(is.na(data)))
       )
   }) 
@@ -354,7 +358,7 @@ server <- function(input, output) {
       ggplot() +
       geom_jitter(aes_string(var1, var2, color = var3)) +
       labs(x = name1, y = name2, 
-           title = str_c(name2, " vs. ", name1)) +
+           title = str_c("Scatterplot of ", name2, " vs. ", name1)) +
       theme(axis.title = element_text(size = 14),
             plot.title = element_text(size = 16, face = "bold"))
     
@@ -379,7 +383,7 @@ server <- function(input, output) {
       ggplot() +
       geom_boxplot(aes_string(var1, var2)) +
       labs(x = name1, y = name2, 
-           title = str_c(name2, " grouped by ", name1)) +
+           title = str_c("Distribution of ", name2, " by ", name1)) +
       coord_flip() +
       theme(axis.title = element_text(size = 16),
             axis.text = element_text(size = 14),
