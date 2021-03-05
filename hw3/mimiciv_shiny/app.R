@@ -4,7 +4,9 @@ library(bslib)
 
 #icu_cohort = readRDS("hw3/mimiciv_shiny/icu_cohort.rds")
 
-#Missing Data? 
+#Missing Data?
+#Finish Rmd file
+#push mimic 
 
 # Predefine variable lists for use in dropdown menus ------------------------
 categorical_list <- list("First Care Unit" = "first_careunit",
@@ -90,7 +92,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
             ),
           
           mainPanel(
-            textOutput(outputId = "catSummaryTitle"),
+            htmlOutput(outputId = "catSummaryTitle"),
             tableOutput(outputId = "catSummary")
           )        
         ) 
@@ -146,7 +148,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
           ),
            
           mainPanel(
-            textOutput(outputId = "numSummaryTitle"),
+            htmlOutput(outputId = "numSummaryTitle"),
             tableOutput(outputId = "numSummary")
           )        
         )
@@ -183,14 +185,14 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
               conditionalPanel(
                 condition = "input.scatter_provide_axis == 'Create custom axes'",
                 
-                helpText("Use slider below to adjust x and y axis limits. This
-                       can help in cases of extreme outliers. You can return
-                       to default by clicking 'Use default axis' above."),
+                helpText("Use sliders below to adjust x and y axis limits. You 
+                         can return to default by clicking 'Use default axis' 
+                         above."),
                 
-                sliderInput("scatter_xvals", "Set x-min and max", 0, 500,
+                sliderInput("scatter_xvals", "Set x-min and max:", 0, 500,
                             c(0, 500)),
                 
-                sliderInput("scatter_yvals", "Set y-min and max", 0, 500,
+                sliderInput("scatter_yvals", "Set y-min and max:", 0, 500,
                             c(0, 500))
               )
               
@@ -246,12 +248,11 @@ server <- function(input, output) {
   })
   
   
-  output$catSummaryTitle <- renderText({
+  output$catSummaryTitle <- renderUI({
     data <- input$cat_var_sum
     name <- names(which(categorical_list == data))
     
-    str_c("Frequency table for ", name)
-    
+    HTML(paste("<h3>", "Frequency table for ", name, "</h3>"))
   })
   
   
@@ -291,9 +292,10 @@ server <- function(input, output) {
     }
   })
   
-  output$numSummaryTitle <- renderText({
+  output$numSummaryTitle <- renderUI({
     name <- names(which(numeric_list == input$num_var_sum))
-    str_c("Summary statistics for ", name)
+
+    HTML(str_c("<h4>", "Summary statistics for ", name, "</h4>"))
   })
   
   output$numSummary <- renderTable({
