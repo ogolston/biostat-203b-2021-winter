@@ -6,7 +6,7 @@ library(bslib)
 
 #Missing Data? 
 
-# Predefine variable lists for use in dropdown menus ---------------------------
+# Predefine variable lists for use in dropdown menus ------------------------
 categorical_list <- list("First Care Unit" = "first_careunit",
                         "Last Care Unit" = "last_careunit",
                         "Admission Type" = "admission_type",
@@ -41,14 +41,12 @@ numeric_list <-  list("Age" = "age_at_adm",
                   "Systolic BP (arterial)" =
                      "arterial_blood_pressure_systolic",
                   "Mean BP (arterial)" =
-                     "arterial_blood_pressure_mean",
-                  "Admission Time" = "intime",
-                  "Discharge Time" = "outtime")
+                     "arterial_blood_pressure_mean")
 
 
 color_key <- list("Red" = "tomato", 
-                  "Yellow" = "darkgoldenrod1", 
                   "Orange" = "sienna1",
+                  "Yellow" = "darkgoldenrod1", 
                   "Green" = "lightgreen", 
                   "Blue" = "dodgerblue", 
                   "Violet" = "violet",
@@ -100,7 +98,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
   ),  
   
   tabPanel("Quantitative Variables",  
-    titlePanel("Quantitative Variables"),
+    titlePanel("Age, Labs, and Chart Measurements"),
            
     tabsetPanel(
       type = "tabs",
@@ -187,32 +185,42 @@ server <- function(input, output) {
 
   output$catPlot <- renderPlot({
     data <- input$cat_var
+    name <- names(which(categorical_list == data))
     viz <- input$cat_plot_type
 
     if(viz == "Bar Plot"){
       ggplot(icu_cohort) +
-        geom_bar(aes_string(data)) + 
-        coord_flip()
+        geom_bar(aes_string(data), color = "black", fill = "deepskyblue") + 
+        coord_flip() +
+        labs(title = str_c("Distribution of ", name), x = name)
     } else {
       ggplot(icu_cohort, aes_string(x = factor(1), fill = data)) +
         geom_bar(width = 1) +
         coord_polar("y") +
-        theme_void()
+        theme_void() +
+        labs(title = str_c("Distribution of ", name), x = name)
     }
     
   })
   
   output$catSummary <- renderTable({
     data <- input$cat_var_sum
+    name <- names(which(categorical_list == data))
     
-    icu_cohort %>%
+    table <- icu_cohort %>%
       group_by(get(data)) %>%
-      arrange() %>%
-      count()
+      count() %>%
+      arrange(desc(n)) 
+    
+    colnames(table) <- c("Value", "Count")
+    
+    table
   })
   
   output$numPlot <- renderPlot({
     data <- input$num_var
+    name <- names(which(numeric_list == data))
+    
 
     ggplot(icu_cohort) +
       geom_histogram(aes_string(data), color = "black", 
@@ -226,6 +234,7 @@ server <- function(input, output) {
     tibble(
       Statistic = c("Min", "1st Quartile", "Median", "Mean", 
                     "3rd Quartile", "Max", "# of NAs"),
+      
       Value = c(min(data, na.rm=T),
                  quantile(data, .25, na.rm=T),
                  median(data, na.rm=T),
@@ -239,11 +248,17 @@ server <- function(input, output) {
 
   output$bivariatePlot <- renderPlot({
     var1 <- input$var1
-    var2 <- input$var2
+    name1 <- names(which(numeric_list == var1))
 
+    
+    var2 <- input$var2
+    name2 <- names(which(numeric_list == var2))
+    
     icu_cohort %>%
       ggplot() +
-      geom_jitter(aes_string(var1, var2))
+      geom_jitter(aes_string(var1, var2)) +
+      labs(xlab = name1, ylab = name2, 
+           title = str_c(name2, " vs. ", name1))
     
   })
   
@@ -251,9 +266,16 @@ server <- function(input, output) {
     var1 <- input$boxplot_var1
     var2 <- input$boxplot_var2
     
+    name1 <- names(which(categorical_list == var1))
+    name2 <- names(which(numeric_list == var2))
+    
+    
     icu_cohort %>%
       ggplot() +
-      geom_boxplot(aes_string(var1, var2))
+      geom_boxplot(aes_string(var1, var2)) +
+      labs(xlab = name1, ylab = name2, 
+           title = str_c(name2, " grouped by ", name1))
+    
   })
   
 }
