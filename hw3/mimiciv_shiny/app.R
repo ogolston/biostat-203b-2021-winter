@@ -16,7 +16,7 @@ categorical_list <- list("First Care Unit" = "first_careunit",
                         "Marital Status" = "marital_status",
                         "Ethnicity" = "ethnicity",
                         "Gender" ="gender",
-                        "Death in 30 Days?" = "death_in_month")
+                        "Death in 30 Days" = "death_in_month")
 
 
 numeric_list <-  list("Age" = "age_at_adm",
@@ -90,6 +90,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
             ),
           
           mainPanel(
+            textOutput(outputId = "catSummaryTitle"),
             tableOutput(outputId = "catSummary")
           )        
         ) 
@@ -145,6 +146,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
           ),
            
           mainPanel(
+            textOutput(outputId = "numSummaryTitle"),
             tableOutput(outputId = "numSummary")
           )        
         )
@@ -167,10 +169,16 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                           choices = numeric_list,
                           selected = "age_at_adm"),
               
+              selectInput("var3", "Optional: Choose variable for color", 
+                          choices = list("None" = "NULL",
+                                      "Death in 30 days?" = "death_in_month",
+                                      "Gender" = "gender"),
+                          selected = "NULL"),
               
               radioButtons("scatter_provide_axis", "Provide custom axes?", 
                            c("Use default axes", "Create custom axes"),
                            "Use default axes"),
+            
               
               conditionalPanel(
                 condition = "input.scatter_provide_axis == 'Create custom axes'",
@@ -237,10 +245,19 @@ server <- function(input, output) {
     
   })
   
-  output$catSummary <- renderTable({
+  
+  output$catSummaryTitle <- renderText({
     data <- input$cat_var_sum
     name <- names(which(categorical_list == data))
     
+    str_c("Frequency table for ", name)
+    
+  })
+  
+  
+  output$catSummary <- renderTable({
+    data <- input$cat_var_sum
+
     table <- icu_cohort %>%
       group_by(get(data)) %>%
       count() %>%
@@ -263,15 +280,21 @@ server <- function(input, output) {
     if(choice == "Use default axis"){
       ggplot(icu_cohort) +
         geom_histogram(aes_string(data), color = "black", 
-                       fill = input$plot_color)   
+                       fill = input$plot_color) +
+        labs(title = str_c("Distribution of ", name), x = name)
     } else {
       ggplot(icu_cohort) +
         geom_histogram(aes_string(data), color = "black", 
                        fill = input$plot_color) +
-        xlim(x_min, x_max)
+        xlim(x_min, x_max) +
+        labs(title = str_c("Distribution of ", name), x = name)
     }
   })
   
+  output$numSummaryTitle <- renderText({
+    name <- names(which(numeric_list == input$num_var_sum))
+    str_c("Summary statistics for ", name)
+  })
   
   output$numSummary <- renderTable({
     data <- icu_cohort[[input$num_var_sum]]
@@ -290,13 +313,14 @@ server <- function(input, output) {
       )
   }) 
 
-
   output$bivariatePlot <- renderPlot({
     var1 <- input$var1
     name1 <- names(which(numeric_list == var1))
     
     var2 <- input$var2
     name2 <- names(which(numeric_list == var2))
+    
+    var3 <- input$var3
     
     choice <- input$scatter_provide_axis
     xmin <- input$scatter_xvals[1]
@@ -308,15 +332,15 @@ server <- function(input, output) {
     if(choice == "Use default axes"){
       icu_cohort %>%
         ggplot() +
-        geom_jitter(aes_string(var1, var2)) +
-        labs(xlab = name1, ylab = name2, 
+        geom_jitter(aes_string(var1, var2, color = var3)) +
+        labs(x = name1, y = name2, 
              title = str_c(name2, " vs. ", name1))
       
     } else{
       icu_cohort %>%
         ggplot() +
-        geom_jitter(aes_string(var1, var2)) +
-        labs(xlab = name1, ylab = name2, 
+        geom_jitter(aes_string(var1, var2, color = var3)) +
+        labs(x = name1, y = name2, 
              title = str_c(name2, " vs. ", name1)) +
         xlim(xmin, xmax) +
         ylim(ymin, ymax)
@@ -330,11 +354,10 @@ server <- function(input, output) {
     name1 <- names(which(categorical_list == var1))
     name2 <- names(which(numeric_list == var2))
     
-    
     icu_cohort %>%
       ggplot() +
       geom_boxplot(aes_string(var1, var2)) +
-      labs(xlab = name1, ylab = name2, 
+      labs(x = name1, y = name2, 
            title = str_c(name2, " grouped by ", name1))
     
   })
