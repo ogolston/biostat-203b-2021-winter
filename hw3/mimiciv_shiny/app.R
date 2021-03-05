@@ -113,8 +113,20 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
                         choices = color_key,
                         selected = "tomato"),
             
-            sliderInput("xvals", "Optional: set x-min and max", 0, 500,
-                        c(0, 500)) 
+            radioButtons("provide_axis", "Provide custom axis?", 
+                         c("Use default axis", "Create custom axis"),
+                         "Use default axis"),
+            
+            conditionalPanel(
+              condition = "input.provide_axis == 'Create custom axis'",
+              
+              helpText("Use slider below to adjust x-axis limits. This
+                       can help in cases of extreme outliers. You can return
+                       to default by clicking 'Use default axis' above."),
+              
+              sliderInput("xvals", "Set x-min and max", 0, 500,
+                          c(0, 500))
+            )
           ),
           
           mainPanel(
@@ -153,7 +165,26 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
               
               selectInput("var2", "Choose variable for y-axis", 
                           choices = numeric_list,
-                          selected = "age_at_adm")
+                          selected = "age_at_adm"),
+              
+              
+              radioButtons("scatter_provide_axis", "Provide custom axes?", 
+                           c("Use default axes", "Create custom axes"),
+                           "Use default axes"),
+              
+              conditionalPanel(
+                condition = "input.scatter_provide_axis == 'Create custom axes'",
+                
+                helpText("Use slider below to adjust x and y axis limits. This
+                       can help in cases of extreme outliers. You can return
+                       to default by clicking 'Use default axis' above."),
+                
+                sliderInput("scatter_xvals", "Set x-min and max", 0, 500,
+                            c(0, 500)),
+                
+                sliderInput("scatter_yvals", "Set y-min and max", 0, 500,
+                            c(0, 500))
+              )
               
               ),
               
@@ -223,13 +254,22 @@ server <- function(input, output) {
   output$numPlot <- renderPlot({
     data <- input$num_var
     name <- names(which(numeric_list == data))
+    
+    choice <- input$provide_axis
+    
     x_min <- input$xvals[1]
     x_max <- input$xvals[2]
-
-    ggplot(icu_cohort) +
-      geom_histogram(aes_string(data), color = "black", 
-                     fill = input$plot_color) +
-      xlim(x_min, x_max)
+    
+    if(choice == "Use default axis"){
+      ggplot(icu_cohort) +
+        geom_histogram(aes_string(data), color = "black", 
+                       fill = input$plot_color)   
+    } else {
+      ggplot(icu_cohort) +
+        geom_histogram(aes_string(data), color = "black", 
+                       fill = input$plot_color) +
+        xlim(x_min, x_max)
+    }
   })
   
   
@@ -254,17 +294,33 @@ server <- function(input, output) {
   output$bivariatePlot <- renderPlot({
     var1 <- input$var1
     name1 <- names(which(numeric_list == var1))
-
     
     var2 <- input$var2
     name2 <- names(which(numeric_list == var2))
     
-    icu_cohort %>%
-      ggplot() +
-      geom_jitter(aes_string(var1, var2)) +
-      labs(xlab = name1, ylab = name2, 
-           title = str_c(name2, " vs. ", name1))
+    choice <- input$scatter_provide_axis
+    xmin <- input$scatter_xvals[1]
+    xmax <- input$scatter_xvals[2]
+    ymin <- input$scatter_yvals[1]
+    ymax <- input$scatter_yvals[2]
     
+    
+    if(choice == "Use default axes"){
+      icu_cohort %>%
+        ggplot() +
+        geom_jitter(aes_string(var1, var2)) +
+        labs(xlab = name1, ylab = name2, 
+             title = str_c(name2, " vs. ", name1))
+      
+    } else{
+      icu_cohort %>%
+        ggplot() +
+        geom_jitter(aes_string(var1, var2)) +
+        labs(xlab = name1, ylab = name2, 
+             title = str_c(name2, " vs. ", name1)) +
+        xlim(xmin, xmax) +
+        ylim(ymin, ymax)
+    }
   })
   
   output$boxPlot <- renderPlot({
