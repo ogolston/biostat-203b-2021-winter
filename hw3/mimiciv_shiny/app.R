@@ -41,7 +41,9 @@ numeric_list <-  list("Age" = "age_at_adm",
                   "Systolic BP (arterial)" =
                      "arterial_blood_pressure_systolic",
                   "Mean BP (arterial)" =
-                     "arterial_blood_pressure_mean")
+                     "arterial_blood_pressure_mean",
+                  "Admission Time" = "intime",
+                  "Discharge Time" = "outtime")
 
 
 color_key <- list("Red" = "tomato", 
@@ -53,9 +55,6 @@ color_key <- list("Red" = "tomato",
                   "Pink" = "palevioletred1",
                   "Brown" = "burlywood1",
                   "Grey" = "lightgrey")
-
-
-
 
 
 ui <- navbarPage("MIMIC-IV Data Dashboard",
@@ -93,15 +92,16 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
            ),
           
            mainPanel(
-             tableOutput(outputId = "summary")
+             tableOutput(outputId = "catSummary")
            )        
          )
        )
      )
   ),  
   
-  tabPanel("Measurements",  
-    titlePanel("Age, Lab, and Chart Measurements"),
+  tabPanel("Quantitative Variables",  
+    titlePanel("Quantitative Variables"),
+           
     tabsetPanel(
       type = "tabs",
       tabPanel("Plots",
@@ -113,7 +113,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
             
             selectInput("plot_color", "Choose color for plot", 
                         choices = color_key,
-                        selected = "lightgrey")
+                        selected = "tomato")
           ),
           
           mainPanel(
@@ -132,7 +132,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
            ),
            
            mainPanel(
-             #tableOutput(outputId = "num_summary")
+             tableOutput(outputId = "numSummary")
            )        
          )
        )
@@ -202,7 +202,7 @@ server <- function(input, output) {
     
   })
   
-  output$summary <- renderTable({
+  output$catSummary <- renderTable({
     data <- input$cat_var_sum
     
     icu_cohort %>%
@@ -220,17 +220,23 @@ server <- function(input, output) {
   })
   
   
-  # output$num_summary <- renderTable({
-  #   data <- input$cat_var_sum
-  #   
-  #   icu_cohort %>%
-  #     group_by(get(data)) %>%
-  #     arrange() %>%
-  #     count()
-  # })
-  
-  
-  
+  output$numSummary <- renderTable({
+    data <- icu_cohort[[input$num_var_sum]]
+
+    tibble(
+      Statistic = c("Min", "1st Quartile", "Median", "Mean", 
+                    "3rd Quartile", "Max", "# of NAs"),
+      Value = c(min(data, na.rm=T),
+                 quantile(data, .25, na.rm=T),
+                 median(data, na.rm=T),
+                 mean(data, na.rm=T),
+                 quantile(data, .75, na.rm=T),
+                 max(data, na.rm=T),
+                 sum(is.na(data)))
+      )
+  }) 
+
+
   output$bivariatePlot <- renderPlot({
     var1 <- input$var1
     var2 <- input$var2
