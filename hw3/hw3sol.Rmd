@@ -96,6 +96,10 @@ icustays_tble <- tbl(con, Id(schema = "mimic_icu", table = "icustays")) %>%
   print(width = Inf)
 ```
 
+
+### Solution (1.4 - 1.7)
+Questions 1.4 - 1.7 were completed using the same process as Q1.3. For each part, the appropriate schema and table names were identified using the `MIMIC-IV` database table/schema relations list that is displayed in Q1.2. 
+
 4. Connect to the patients table.
 ```{r}
 patients_tble <- tbl(con, Id(schema = "mimic_core", table = "patients")) %>%
@@ -132,36 +136,45 @@ if (!dir.exists("mimiciv_shiny")) {
 ```
 
 
-**Solution**: The following pipe completes the requested steps and saves the final tibble, which has admissions data, patient data, chart events, lab events, and a "death in 30 days" indicator for the first ICU stay of each patient.
+### Solution (1.8)
+The following pipe completes the requested steps and saves the final tibble, which has admissions data, patient data, chart events, lab events, and a "death in 30 days" indicator variable for the first ICU stay of each patient.
 
 ```{r}
 icustays_tble %>% 
   group_by(subject_id) %>%
-  #filter out only first observation per patient
+  
+  #keep only first icu stay per patient
   filter(rank(intime) == 1) %>%
   ungroup() %>%
-  #join in admissions and patients data tables
+  
+  #join in admissions and patients data tables using appropriate identifier
   left_join(admissions_tble, by = c("subject_id", "hadm_id")) %>%
   left_join(patients_tble, by = c("subject_id")) %>%
-  #calculate age and filter out minors
+  
+  #calculate age at admission and keep only adults
   mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %>%
   filter(age_at_adm >= 18) %>%
+  
   #merge with labevents and chartevents data
   left_join(labevents_tble) %>%
   left_join(chartevents_tble) %>%
-  #show SQL query and collect as tibble
+  
+  #display SQL query and collect as tibble
   show_query() %>%
   collect() %>%
   as_tibble() %>%
+  
   #create indicator variable for death in 30 days
   mutate(time_to_death = as.duration(deathtime - intime),
-         death_in_month = ifelse(is.na(time_to_death) | time_to_death > ddays(30),
-                                    FALSE, TRUE)) %>%
+         death_in_month = ifelse(is.na(time_to_death) | 
+                                 time_to_death >= ddays(31),
+                                 FALSE, TRUE)) %>%
   select(-time_to_death) %>%
 
   #write to RDS file for use with Shiny app
   saveRDS("mimiciv_shiny/icu_cohort.rds")
 ```
+The final tibble has 50,048 unique ICU stays. 
 
 
 Close database connection and clear workspace.
@@ -175,17 +188,18 @@ rm(list = ls())
 Develop a Shiny app for exploring the ICU cohort data created in Q1. The app should reside in the `mimiciv_shiny` folder. The app should provide easy access to the graphical and numerical summaries of variables (demographics, lab measurements, vitals) in the ICU cohort.
 
 
-**Solution**: See `app.R` in the `mimiciv_shiny` folder for my Shiny app. 
-My app has 3 main tabs, each with subtabs:  
+### App Description 
+See `app.R` in the `mimiciv_shiny` folder for my Shiny app. 
+My app has 3 main tabs for data exploration:  
 
-1. `Categorical Data` tab can be used for exploring demographic and admission type variables.
-    + The `Plots` subtab is for creating pie charts and bar charts.  
-    + The `Table` subtab is for creating frequency tables.
-2. `Quantitative Data` tab can be used for exploring numeric variables, including all chart and lab events, as well as age. 
-    + The `Plots` subtab allows users to create histograms. There is an optional feature for changing the x-axis, as the default plots are often hard to interpret due to outliers. 
-    + The `Tables` subtab allows users to see summary statistics for each variable.
-3. `Bivariate Distributions` tab houses options for seeing how the variables are jointly distributed. 
-    + The `Scatterplots` subtab is used for plotting two continuous variables. The x-axis and y-axis can optionally be adjusted, and users can add a color indicator for `death in month` or `gender`.
-    + The `Boxplots` subtab can be used to explore the relationship between a categorical and a continuous variable. 
+1. The `Categorical Data` tab can be used for exploring demographic and admission variables.
+    + The `Plots` sub-tab is for building pie charts and bar charts.  
+    + The `Table` sub-tab displays frequency tables.
+2. The `Quantitative Data` tab can be used for exploring numeric variables, including all chart and lab events as well as age. 
+    + The `Plots` sub-tab allows users to create histograms. There are also optional features for customization, including changing the plot color, changing the number of bins, or creating custom x-axis limits. 
+    + The `Tables` sub-tab allows users to see summary statistics for each variable, including the number of `NA` values.
+3. The `Bivariate Distributions` tab provides options for seeing how the variables are jointly distributed.
+    + The `Scatterplots` sub-tab is used for plotting two continuous variables. The x-axis and y-axis can optionally be adjusted, and users can add a color indicator for `death in month`.
+    + The `Boxplots` sub-tab can be used to explore the relationship between a categorical and a continuous variable. Axes can optionally be adjusted.
 
-When creating the Shiny app, Dr. Zhou's lecture notes, the RStudio Shiny tutorials [accessed here](https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/), and the Shiny [gallery](https://shiny.rstudio.com/gallery/) were an immense help for getting ideas and code structure for the app layout and features. 
+Acknowledgement: When creating the Shiny app, Dr. Zhou's lecture notes, the RStudio Shiny tutorials [accessed here](https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/), and the Shiny [gallery](https://shiny.rstudio.com/gallery/) were an immense help for getting ideas and code structure for the app layout and features. 

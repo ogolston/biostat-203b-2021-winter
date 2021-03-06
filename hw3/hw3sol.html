@@ -381,8 +381,13 @@ summary {
 <div id="TOC">
 <ul>
 <li><a href="#q0.-create-mimic-iv-postgresql-database">Q0. Create MIMIC-IV PostgreSQL database</a></li>
-<li><a href="#q1.-compile-the-icu-cohort-in-hw2-q8-from-the-postgresql-database-mimiciv.">Q1. Compile the ICU cohort in HW2 Q8 from the PostgreSQL database <code>mimiciv</code>.</a></li>
-<li><a href="#q2.-shiny-app">Q2. Shiny app</a></li>
+<li><a href="#q1.-compile-the-icu-cohort-in-hw2-q8-from-the-postgresql-database-mimiciv.">Q1. Compile the ICU cohort in HW2 Q8 from the PostgreSQL database <code>mimiciv</code>.</a><ul>
+<li><a href="#solution-1.4---1.7">Solution (1.4 - 1.7)</a></li>
+<li><a href="#solution-1.8">Solution (1.8)</a></li>
+</ul></li>
+<li><a href="#q2.-shiny-app">Q2. Shiny app</a><ul>
+<li><a href="#app-description">App Description</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -668,6 +673,9 @@ dbname &lt;- &#39;mimiciv&#39;
 ##  9  1.02 
 ## 10 12.7  
 ## # … with more rows</code></pre>
+<div id="solution-1.4---1.7" class="section level3">
+<h3>Solution (1.4 - 1.7)</h3>
+<p>Questions 1.4 - 1.7 were completed using the same process as Q1.3. For each part, the appropriate schema and table names were identified using the <code>MIMIC-IV</code> database table/schema relations list that is displayed in Q1.2.</p>
 <ol start="4" style="list-style-type: decimal">
 <li>Connect to the patients table.</li>
 </ol>
@@ -697,52 +705,52 @@ dbname &lt;- &#39;mimiciv&#39;
 ## # Database: postgres 10.0.16 [postgres@/var/run/postgresql:5432/mimiciv]
 ##    subject_id  hadm_id admittime           dischtime          
 ##         &lt;int&gt;    &lt;int&gt; &lt;dttm&gt;              &lt;dttm&gt;             
-##  1   12427812 21593330 2184-01-06 11:51:00 2184-01-10 11:45:00
-##  2   14029832 22059088 2120-01-18 01:28:00 2120-01-20 16:13:00
-##  3   14495017 22484010 2175-01-28 15:41:00 2175-01-29 16:00:00
-##  4   13676048 23865469 2193-01-19 05:27:00 2193-01-24 18:59:00
-##  5   13831972 27763544 2131-01-27 04:03:00 2131-01-27 05:39:00
-##  6   18523038 25414328 2142-08-26 17:14:00 2142-08-27 10:00:00
-##  7   16705931 20580522 2174-10-24 11:30:00 2174-10-24 18:45:00
-##  8   19963742 24951506 2171-07-04 15:58:00 2171-07-05 13:37:00
-##  9   10903424 22568585 2181-01-31 13:09:00 2181-01-31 13:42:00
-## 10   15030422 21975876 2149-09-21 23:54:00 2149-09-22 03:59:00
-##    deathtime           admission_type         admission_location    
-##    &lt;dttm&gt;              &lt;chr&gt;                  &lt;chr&gt;                 
-##  1 NA                  URGENT                 PHYSICIAN REFERRAL    
-##  2 NA                  URGENT                 TRANSFER FROM HOSPITAL
-##  3 NA                  DIRECT EMER.           PHYSICIAN REFERRAL    
-##  4 NA                  URGENT                 PHYSICIAN REFERRAL    
-##  5 NA                  EU OBSERVATION         EMERGENCY ROOM        
-##  6 NA                  DIRECT OBSERVATION     PROCEDURE SITE        
-##  7 NA                  DIRECT OBSERVATION     PHYSICIAN REFERRAL    
-##  8 NA                  AMBULATORY OBSERVATION PACU                  
-##  9 NA                  EU OBSERVATION         EMERGENCY ROOM        
-## 10 NA                  EU OBSERVATION         EMERGENCY ROOM        
-##    discharge_location insurance language marital_status ethnicity
-##    &lt;chr&gt;              &lt;chr&gt;     &lt;chr&gt;    &lt;chr&gt;          &lt;chr&gt;    
-##  1 HOME               Other     ENGLISH  &lt;NA&gt;           UNKNOWN  
-##  2 HOME               Other     ENGLISH  &lt;NA&gt;           OTHER    
-##  3 HOME               Other     ?        &lt;NA&gt;           WHITE    
-##  4 HOME               Other     ?        MARRIED        WHITE    
-##  5 &lt;NA&gt;               Medicaid  ENGLISH  SINGLE         WHITE    
-##  6 &lt;NA&gt;               Other     ENGLISH  SINGLE         WHITE    
-##  7 &lt;NA&gt;               Other     ENGLISH  MARRIED        WHITE    
-##  8 &lt;NA&gt;               Other     ENGLISH  SINGLE         UNKNOWN  
-##  9 &lt;NA&gt;               Other     ENGLISH  SINGLE         WHITE    
-## 10 &lt;NA&gt;               Other     ENGLISH  SINGLE         WHITE    
+##  1   17284711 22270973 2117-01-07 19:37:00 2117-01-12 17:47:00
+##  2   16680046 22497215 2191-06-10 02:21:00 2191-06-20 15:00:00
+##  3   11216907 21782641 2135-11-06 23:44:00 2135-11-09 16:00:00
+##  4   11037473 23359095 2163-09-15 13:10:00 2163-09-17 09:10:00
+##  5   19474929 28791393 2128-12-31 15:30:00 2129-01-02 17:48:00
+##  6   10558865 24864673 2168-05-18 21:54:00 2168-05-31 14:35:00
+##  7   11116833 22244077 2170-01-08 12:56:00 2170-01-16 17:05:00
+##  8   11408401 20203574 2182-07-10 22:36:00 2182-07-12 15:09:00
+##  9   18594766 28376683 2193-05-23 20:43:00 2193-06-03 15:30:00
+## 10   14053933 29593074 2144-08-20 17:24:00 2144-08-22 17:31:00
+##    deathtime           admission_type    admission_location    
+##    &lt;dttm&gt;              &lt;chr&gt;             &lt;chr&gt;                 
+##  1 NA                  OBSERVATION ADMIT PHYSICIAN REFERRAL    
+##  2 2191-06-20 15:00:00 OBSERVATION ADMIT PHYSICIAN REFERRAL    
+##  3 NA                  EW EMER.          EMERGENCY ROOM        
+##  4 NA                  DIRECT EMER.      PHYSICIAN REFERRAL    
+##  5 NA                  ELECTIVE          PHYSICIAN REFERRAL    
+##  6 NA                  URGENT            TRANSFER FROM HOSPITAL
+##  7 NA                  EW EMER.          TRANSFER FROM HOSPITAL
+##  8 NA                  ELECTIVE          PHYSICIAN REFERRAL    
+##  9 NA                  EW EMER.          EMERGENCY ROOM        
+## 10 NA                  EW EMER.          EMERGENCY ROOM        
+##    discharge_location       insurance language marital_status ethnicity
+##    &lt;chr&gt;                    &lt;chr&gt;     &lt;chr&gt;    &lt;chr&gt;          &lt;chr&gt;    
+##  1 HOME HEALTH CARE         Other     ?        MARRIED        ASIAN    
+##  2 DIED                     Other     ENGLISH  SINGLE         OTHER    
+##  3 HOME                     Other     ENGLISH  SINGLE         WHITE    
+##  4 HOME HEALTH CARE         Other     ENGLISH  SINGLE         WHITE    
+##  5 HOME HEALTH CARE         Other     ENGLISH  SINGLE         WHITE    
+##  6 SKILLED NURSING FACILITY Other     ENGLISH  SINGLE         WHITE    
+##  7 REHAB                    Other     ENGLISH  MARRIED        WHITE    
+##  8 HOME                     Medicare  ENGLISH  WIDOWED        WHITE    
+##  9 REHAB                    Medicare  ENGLISH  SINGLE         WHITE    
+## 10 HOME HEALTH CARE         Medicare  ENGLISH  WIDOWED        WHITE    
 ##    edregtime           edouttime           hospital_expire_flag
 ##    &lt;dttm&gt;              &lt;dttm&gt;                             &lt;int&gt;
 ##  1 NA                  NA                                     0
-##  2 NA                  NA                                     0
-##  3 NA                  NA                                     0
+##  2 2191-06-09 19:10:00 2191-06-10 03:05:00                    1
+##  3 2135-11-06 20:46:00 2135-11-07 03:46:00                    0
 ##  4 NA                  NA                                     0
-##  5 2131-01-26 22:19:00 2131-01-27 05:39:00                    0
+##  5 NA                  NA                                     0
 ##  6 NA                  NA                                     0
-##  7 NA                  NA                                     0
-##  8 NA                  NA                                     0
-##  9 NA                  NA                                     0
-## 10 NA                  NA                                     0
+##  7 2170-01-08 00:27:00 2170-01-08 14:42:00                    0
+##  8 2182-07-10 06:33:00 2182-07-10 23:00:00                    0
+##  9 2193-05-23 16:01:00 2193-05-24 00:45:00                    0
+## 10 2144-08-20 11:22:00 2144-08-20 18:18:00                    0
 ## # … with more rows</code></pre>
 <ol start="6" style="list-style-type: decimal">
 <li>Connect to the <code>mimic_labevents_icu</code> table.</li>
@@ -829,29 +837,39 @@ dbname &lt;- &#39;mimiciv&#39;
 if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
   dir.create(&quot;mimiciv_shiny&quot;)
 }</code></pre>
-<p><strong>Solution</strong>: The following pipe completes the requested steps and saves the final tibble, which has admissions data, patient data, chart events, lab events, and a “death in 30 days” indicator for the first ICU stay of each patient.</p>
+</div>
+<div id="solution-1.8" class="section level3">
+<h3>Solution (1.8)</h3>
+<p>The following pipe completes the requested steps and saves the final tibble, which has admissions data, patient data, chart events, lab events, and a “death in 30 days” indicator variable for the first ICU stay of each patient.</p>
 <pre class="r"><code>icustays_tble %&gt;% 
   group_by(subject_id) %&gt;%
-  #filter out only first observation per patient
+  
+  #keep only first icu stay per patient
   filter(rank(intime) == 1) %&gt;%
   ungroup() %&gt;%
-  #join in admissions and patients data tables
+  
+  #join in admissions and patients data tables using appropriate identifier
   left_join(admissions_tble, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
   left_join(patients_tble, by = c(&quot;subject_id&quot;)) %&gt;%
-  #calculate age and filter out minors
+  
+  #calculate age at admission and keep only adults
   mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %&gt;%
   filter(age_at_adm &gt;= 18) %&gt;%
+  
   #merge with labevents and chartevents data
   left_join(labevents_tble) %&gt;%
   left_join(chartevents_tble) %&gt;%
-  #show SQL query and collect as tibble
+  
+  #display SQL query and collect as tibble
   show_query() %&gt;%
   collect() %&gt;%
   as_tibble() %&gt;%
+  
   #create indicator variable for death in 30 days
   mutate(time_to_death = as.duration(deathtime - intime),
-         death_in_month = ifelse(is.na(time_to_death) | time_to_death &gt; ddays(30),
-                                    FALSE, TRUE)) %&gt;%
+         death_in_month = ifelse(is.na(time_to_death) | 
+                                 time_to_death &gt;= ddays(31),
+                                 FALSE, TRUE)) %&gt;%
   select(-time_to_death) %&gt;%
 
   #write to RDS file for use with Shiny app
@@ -881,34 +899,39 @@ if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
 ## ) &quot;LHS&quot;
 ## LEFT JOIN &quot;public&quot;.&quot;mimic_chartevents_icu&quot; AS &quot;RHS&quot;
 ## ON (&quot;LHS&quot;.&quot;subject_id&quot; = &quot;RHS&quot;.&quot;subject_id&quot; AND &quot;LHS&quot;.&quot;hadm_id&quot; = &quot;RHS&quot;.&quot;hadm_id&quot; AND &quot;LHS&quot;.&quot;stay_id&quot; = &quot;RHS&quot;.&quot;stay_id&quot;)</code></pre>
+<p>The final tibble has 50,048 unique ICU stays.</p>
 <p>Close database connection and clear workspace.</p>
 <pre class="r"><code>dbDisconnect(con)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <pre class="r"><code>rm(list = ls())</code></pre>
 </div>
+</div>
 <div id="q2.-shiny-app" class="section level2">
 <h2>Q2. Shiny app</h2>
 <p>Develop a Shiny app for exploring the ICU cohort data created in Q1. The app should reside in the <code>mimiciv_shiny</code> folder. The app should provide easy access to the graphical and numerical summaries of variables (demographics, lab measurements, vitals) in the ICU cohort.</p>
-<p><strong>Solution</strong>: See <code>app.R</code> in the <code>mimiciv_shiny</code> folder for my Shiny app. My app has 3 main tabs, each with subtabs:</p>
+<div id="app-description" class="section level3">
+<h3>App Description</h3>
+<p>See <code>app.R</code> in the <code>mimiciv_shiny</code> folder for my Shiny app. My app has 3 main tabs for data exploration:</p>
 <ol style="list-style-type: decimal">
-<li><code>Categorical Data</code> tab can be used for exploring demographic and admission type variables.
+<li>The <code>Categorical Data</code> tab can be used for exploring demographic and admission variables.
 <ul>
-<li>The <code>Plots</code> subtab is for creating pie charts and bar charts.<br />
+<li>The <code>Plots</code> sub-tab is for building pie charts and bar charts.<br />
 </li>
-<li>The <code>Table</code> subtab is for creating frequency tables.</li>
+<li>The <code>Table</code> sub-tab displays frequency tables.</li>
 </ul></li>
-<li><code>Quantitative Data</code> tab can be used for exploring numeric variables, including all chart and lab events, as well as age.
+<li>The <code>Quantitative Data</code> tab can be used for exploring numeric variables, including all chart and lab events as well as age.
 <ul>
-<li>The <code>Plots</code> subtab allows users to create histograms. There is an optional feature for changing the x-axis, as the default plots are often hard to interpret due to outliers.</li>
-<li>The <code>Tables</code> subtab allows users to see summary statistics for each variable.</li>
+<li>The <code>Plots</code> sub-tab allows users to create histograms. There are also optional features for customization, including changing the plot color, changing the number of bins, or creating custom x-axis limits.</li>
+<li>The <code>Tables</code> sub-tab allows users to see summary statistics for each variable, including the number of <code>NA</code> values.</li>
 </ul></li>
-<li><code>Bivariate Distributions</code> tab houses options for seeing how the variables are jointly distributed.
+<li>The <code>Bivariate Distributions</code> tab provides options for seeing how the variables are jointly distributed.
 <ul>
-<li>The <code>Scatterplots</code> subtab is used for plotting two continuous variables. The x-axis and y-axis can optionally be adjusted, and users can add a color indicator for <code>death in month</code> or <code>gender</code>.</li>
-<li>The <code>Boxplots</code> subtab can be used to explore the relationship between a categorical and a continuous variable.</li>
+<li>The <code>Scatterplots</code> sub-tab is used for plotting two continuous variables. The x-axis and y-axis can optionally be adjusted, and users can add a color indicator for <code>death in month</code>.</li>
+<li>The <code>Boxplots</code> sub-tab can be used to explore the relationship between a categorical and a continuous variable. Axes can optionally be adjusted.</li>
 </ul></li>
 </ol>
 <p>When creating the Shiny app, Dr. Zhou’s lecture notes, the RStudio Shiny tutorials <a href="https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/">accessed here</a>, and the Shiny <a href="https://shiny.rstudio.com/gallery/">gallery</a> were an immense help for getting ideas and code structure for the app layout and features.</p>
+</div>
 </div>
 
 
