@@ -9,6 +9,7 @@ categorical_list <- list("First Care Unit" = "first_careunit",
                         "Last Care Unit" = "last_careunit",
                         "Admission Type" = "admission_type",
                         "Admission Location" = "admission_location",
+                        "Discharge Location" = "discharge_location",
                         "Insurance" = "insurance",
                         "Language" = "language",
                         "Marital Status" = "marital_status",
@@ -49,7 +50,7 @@ color_key <- list("Red" = "tomato",
                   "Blue" = "dodgerblue", 
                   "Violet" = "violet",
                   "Pink" = "palevioletred1",
-                  "Brown" = "burlywood1",
+                  "Brown" = "chocolate4",
                   "Grey" = "lightgrey")
 
 
