@@ -197,7 +197,7 @@ My app has 3 main tabs for data exploration:
     + The `Table` sub-tab displays frequency tables.
 2. The `Quantitative Data` tab can be used for exploring numeric variables, including all chart and lab events as well as age. 
     + The `Plots` sub-tab allows users to create histograms. There are also optional features for customization, including changing the plot color, changing the number of bins, or creating custom x-axis limits. 
-    + The `Tables` sub-tab allows users to see summary statistics for each variable, including the number of `NA` values.
+    + The `Table` sub-tab allows users to see summary statistics for each variable, including the number of `NA` values.
 3. The `Bivariate Distributions` tab provides options for seeing how the variables are jointly distributed.
     + The `Scatterplots` sub-tab is used for plotting two continuous variables. The x-axis and y-axis can optionally be adjusted, and users can add a color indicator for `death in month`.
     + The `Boxplots` sub-tab can be used to explore the relationship between a categorical and a continuous variable. Axes can optionally be adjusted.
