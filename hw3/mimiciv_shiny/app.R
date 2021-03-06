@@ -200,6 +200,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
           )    
         )
       ),
+      
       tabPanel("Boxplots",
         sidebarLayout(
           sidebarPanel(
