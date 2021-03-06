@@ -4,9 +4,6 @@ library(bslib)
 
 icu_cohort = readRDS("icu_cohort.rds")
 
-#Missing Data?
-#push mimic 
-
 # Predefine variable lists for use in dropdown menus ------------------------
 categorical_list <- list("First Care Unit" = "first_careunit",
                         "Last Care Unit" = "last_careunit",
@@ -33,15 +30,15 @@ numeric_list <-  list("Age" = "age_at_adm",
                   "White Blood Cells" = "wbc",
                   "Lactate" = "lactate",
                   "Heart Rate" = "heart_rate",
-                  "Systolic BP (non-invasive)" 
+                  "Systolic Blood Pressure (non-invasive)" 
                    = "non_invasive_blood_pressure_systolic",
-                  "Mean BP (non-invasive)"
+                  "Mean Blood Pressure (non-invasive)"
                    = "non_invasive_blood_pressure_mean",
                   "Respiratory Rate" = "respiratory_rate",
                   "Temperature (F)" = "temperature_fahrenheit",
-                  "Systolic BP (arterial)" =
+                  "Systolic Blood Pressure (arterial)" =
                      "arterial_blood_pressure_systolic",
-                  "Mean BP (arterial)" =
+                  "Mean Blood Pressure (arterial)" =
                      "arterial_blood_pressure_mean")
 
 
@@ -74,13 +71,13 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
             radioButtons("cat_plot_type", "Choose type of visualization",
                           choices = list("Bar Plot", "Pie Chart"), 
                           selected = "Bar Plot")
-            ),
+          ),
              
-            mainPanel(
-              plotOutput(outputId = "catPlot")
-            )
+          mainPanel(
+            plotOutput(outputId = "catPlot")
           )
-        ),
+        )
+      ),
      
       tabPanel("Table",
         sidebarLayout(
@@ -117,7 +114,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
             
             numericInput("bins", "Adjust number of bins", 
                         value = 30,
-                        min = 1, max = 100),
+                        min = 10, max = 75),
             
             radioButtons("provide_axis", "Provide custom axis?", 
                          c("Use default axis", "Create custom axis"),
@@ -127,11 +124,10 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
               condition = "input.provide_axis == 'Create custom axis'",
               
               helpText("Use slider below to adjust x-axis limits. This
-                       can help in cases of extreme outliers. You can return
+                       can help when there are extreme outliers. You can return
                        to default by clicking 'Use default axis' above."),
               
-              sliderInput("xvals", "Set x-min and max", 0, 600,
-                          c(0, 100))
+              sliderInput("xvals", "", 0, 600, c(0, 150))
             )
           ),
           
@@ -164,75 +160,71 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
     tabsetPanel(
       type = "tabs",
       tabPanel("Scatterplots",
-          sidebarLayout(
-            sidebarPanel(
-              selectInput("var1", "Choose variable for x-axis", 
-                          choices = numeric_list,
-                          selected = "heart_rate"),
-              
-              selectInput("var2", "Choose variable for y-axis", 
-                          choices = numeric_list,
-                          selected = "age_at_adm"),
-              
-              selectInput("var3", "Optional: Choose variable for color", 
-                          choices = list("None" = "NULL",
-                                      "Death in 30 days" = "death_in_month",
-                                      "Gender" = "gender"),
-                          selected = "NULL"),
-              
-              radioButtons("scatter_provide_axis", "", 
-                           c("Use default axes", "Create custom axes"),
-                           "Use default axes"),
+        sidebarLayout(
+          sidebarPanel(
+            selectInput("var1", "Choose variable for x-axis", 
+                        choices = numeric_list,
+                        selected = "age_at_adm"),
             
+            selectInput("var2", "Choose variable for y-axis", 
+                        choices = numeric_list,
+                        selected = "heart_rate"),
+            
+            checkboxInput("var3", "Check box to color by death status", 
+                          value = FALSE),
+            
+            radioButtons("scatter_axis", NULL, 
+                         c("Use default axes", "Create custom axes"),
+                         "Use default axes"),
+          
               
-              conditionalPanel(
-                condition = "input.scatter_provide_axis == 'Create custom axes'",
-                
-                helpText("Use sliders below to adjust x and y axis limits. You 
-                         can return to default by clicking 'Use default axis' 
-                         above."),
-                
-                sliderInput("scatter_xvals", "Set x-min and max:", 0, 600,
-                            c(0, 100)),
-                
-                sliderInput("scatter_yvals", "Set y-min and max:", 0, 600,
-                            c(0, 100))
-              )
+            conditionalPanel(
+              condition = "input.scatter_axis == 'Create custom axes'",
               
-              ),
+              helpText("Use sliders below to adjust x and y axis limits. You 
+                       can return to default by clicking 'Use default axis' 
+                       above."),
               
-              mainPanel(
-                plotOutput(outputId = "bivariatePlot")
-              )    
-          )
-       ),
-     tabPanel("Boxplots",
+              sliderInput("scatter_xvals", "Set x-min and max:", 
+                          min = 0, max = 600, value = c(0, 150)),
+              
+              sliderInput("scatter_yvals", "Set y-min and max:", 
+                          min = 0, max = 600, value = c(0, 150))
+            )
+              
+          ),
+              
+          mainPanel(
+            plotOutput(outputId = "bivariatePlot")
+          )    
+        )
+      ),
+      tabPanel("Boxplots",
         sidebarLayout(
           sidebarPanel(
             selectInput("boxplot_cat", "Choose grouping variable", 
-                        choices = categorical_list,
-                        selected = "death_in_month"),
+                         choices = categorical_list,
+                         selected = "death_in_month"),
             
             selectInput("boxplot_num", "Choose numeric outcome variable", 
-                        choices = numeric_list,
-                        selected = "bicarbonate"),
+                         choices = numeric_list,
+                         selected = "bicarbonate"),
             
             radioButtons("provide_axis_box", "Provide custom axis?", 
-                         c("Use default axis", "Create custom axis"),
-                         "Use default axis"),
+                          c("Use default axis", "Create custom axis"),
+                          "Use default axis"),
             
             conditionalPanel(
               condition = "input.provide_axis_box == 'Create custom axis'",
-              
+            
               helpText("Use slider below to adjust axis limits. This
                        can help visualization when there are outliers, but 
                        will not remove those values. You can return
                        to default by clicking 'Use default axis' above."),
-              
-              sliderInput("xvals_box", "Set x-min and max", 0, 600,
-                          c(0, 100))
-            )
             
+              sliderInput("xvals_box", "Set x-min and max", 
+                          min = 0, max = 600, value = c(0, 150))
+            )
           ),
           
           mainPanel(
@@ -251,7 +243,7 @@ ui <- navbarPage("MIMIC-IV Data Dashboard",
     demographic, lab, and chart data for the ICU stays of 50,048 
     unique adult patients.", br(), br(), "All data is deidentified and use 
     was authorized by MIT. Documentation details are available", 
-    a("here", href="http://mimic-iv.mit.edu/docs/", target="_blank")), 
+    a("here", href = "http://mimic-iv.mit.edu/docs/", target = "_blank")), 
 
     p("This app was created by Olivia Golston for Biostatistics 203B at UCLA, 
     using RStudio and Shiny.")      
@@ -266,7 +258,7 @@ server <- function(input, output) {
     name <- names(which(categorical_list == data))
     viz <- input$cat_plot_type
 
-    if(viz == "Bar Plot"){
+    if (viz == "Bar Plot") {
       ggplot(icu_cohort) +
         geom_bar(aes_string(data), color = "black", fill = "deepskyblue") + 
         coord_flip() +
@@ -279,7 +271,9 @@ server <- function(input, output) {
         coord_polar("y") +
         theme_void() +
         labs(title = str_c("Distribution of ", name), x = "") +
-        theme(plot.title = element_text(size = 16, face = "bold"))
+        theme(plot.title = element_text(size = 16, face = "bold", hjust = .5),
+              legend.title = element_blank(),
+              legend.text = element_text(size = 12))
     }
     
   })
@@ -288,7 +282,6 @@ server <- function(input, output) {
   output$catSummaryTitle <- renderUI({
     data <- input$cat_var_sum
     name <- names(which(categorical_list == data))
-    
     HTML(paste("<h3>", "Frequency Table for ", name, "</h3>"))
   })
   
@@ -322,9 +315,8 @@ server <- function(input, output) {
       theme(axis.title = element_text(size = 14),
             plot.title = element_text(size = 16, face = "bold"))
     
-    if(choice == "Use default axis"){
+    if (choice == "Use default axis") {
       base_plot
-      
     } else {
       base_plot +         
         xlim(x_min, x_max)
@@ -333,7 +325,6 @@ server <- function(input, output) {
   
   output$numSummaryTitle <- renderUI({
     name <- names(which(numeric_list == input$num_var_sum))
-
     HTML(str_c("<h4>", "Summary Statistics for ", name, "</h4>"))
   })
   
@@ -344,15 +335,15 @@ server <- function(input, output) {
       Statistic = c("Min", "1st Quartile", "Median", "Mean", 
                     "3rd Quartile", "Max", "# of Measurements", "# of NAs"),
       
-      Value = c(min(data, na.rm=T),
-                 quantile(data, .25, na.rm=T),
-                 median(data, na.rm=T),
-                 mean(data, na.rm=T),
-                 quantile(data, .75, na.rm=T),
-                 max(data, na.rm=T),
+      Value = c(min(data, na.rm = T),
+                 quantile(data, .25, na.rm = T),
+                 median(data, na.rm = T),
+                 mean(data, na.rm = T),
+                 quantile(data, .75, na.rm = T),
+                 max(data, na.rm = T),
                  sum(!is.na(data)),
                  sum(is.na(data)))
-      )
+    )
   }) 
 
   output$bivariatePlot <- renderPlot({
@@ -362,9 +353,10 @@ server <- function(input, output) {
     var2 <- input$var2
     name2 <- names(which(numeric_list == var2))
     
-    var3 <- input$var3
+    colorvar <- ifelse(input$var3, "death_in_month", "NULL")
     
-    choice <- input$scatter_provide_axis
+    
+    choice <- input$scatter_axis
     xmin <- input$scatter_xvals[1]
     xmax <- input$scatter_xvals[2]
     ymin <- input$scatter_yvals[1]
@@ -373,16 +365,16 @@ server <- function(input, output) {
     
     base_plot <- icu_cohort %>%
       ggplot() +
-      geom_jitter(aes_string(var1, var2, color = var3)) +
+      geom_jitter(aes_string(var1, var2, color = colorvar)) +
       labs(x = name1, y = name2, 
            title = str_c("Scatterplot of ", name2, " vs. ", name1)) +
       theme(axis.title = element_text(size = 14),
             plot.title = element_text(size = 16, face = "bold"))
     
     
-    if(choice == "Use default axes"){
+    if (choice == "Use default axes") {
       base_plot
-    } else{
+    } else {
       base_plot +
         xlim(xmin, xmax) +
         ylim(ymin, ymax)
@@ -410,7 +402,7 @@ server <- function(input, output) {
             axis.text = element_text(size = 14),
             plot.title = element_text(size = 16, face = "bold")) 
     
-    if(choice == "Use default axis") {
+    if (choice == "Use default axis") {
       base_plot
     } else {
       base_plot +
@@ -423,4 +415,3 @@ server <- function(input, output) {
 
 
 shinyApp(ui, server)
-
