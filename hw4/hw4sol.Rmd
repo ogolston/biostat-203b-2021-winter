@@ -72,6 +72,134 @@ Perform a data quality check of the ICU stays data. Discard variables with subst
 
 **Solution**
 
+First, read in data to `icu_cohort`:
+```{r}
+icu_cohort <- readRDS("/home/OLIVIAGOLSTON/biostat-203b-2021-winter/hw3/mimiciv_shiny/icu_cohort.rds")
+```
+
+
+```{r}
+missing <- as_tibble(colSums(is.na(icu_cohort))) %>%
+  rename(number_missing = value) %>%
+  mutate(measure = colnames(icu_cohort)) %>%
+  arrange(desc(number_missing)) %>%
+  print()
+```
+
+There are a lot of missing values. No patients have `dod` measurements, and most (fortunately!) do not have `deathtime`. These variables are related to our outcome of interest in Question 2, but the indicator variable `death_in_month` will be used, so `dod` and `deathtime` can be dropped.
+
+Among the chart and lab measurements, `arterial_blood_pressure_systolic`, `arterial_blood_pressure_mean`, and `lactate` all have a lot of missing values. These must not be measurements that are taken for every ICU patient, so this is a likely a "Missing Not at Random" scenario, and imputation would not be appropriate. 
+
+Finally, `edregtime` and `edouttime` are missing for a lot of people. These aren't of much interest, anyway, and can be dropped. 
+
+The remaining variables have <5000 missing values, so will be kept, and the missing values will be imputed. It's not known why these values of missing, so it may not truly be random. However, for the purposes of this project, the missingness will be viewed as random.
+
+Drop the variables: 
+```{r}
+drop_vars <- c("dod", "deathtime", "arterial_blood_pressure_systolic",
+               "arterial_blood_pressure_mean", "lactate", "edregtime",
+               "edouttime")
+
+icu_cohort <- icu_cohort %>%
+  select(-drop_vars) %>% 
+  print()
+
+```
+
+There also appear to be a good deal of data entry errors. Using my Shiny app, I looked for any extreme outliers or otherwise unusual values. 
+
+One challenge in this process is that I don't have the medical knowledge to judge whether extreme outliers are legitimate readings or not. If the extreme outliers are legitimate, they could be strong predictors for death. On the other hand, if they are illegitimate, they could severely skew the results. 
+
+I did my best to research what physically possible values are and only remove ones that I believe are truly unrealistic. However, it's possible I was too conservative or not conservative enough. 
+
+
+I used the Shiny app to find lab and chart measurements with odd values. 
+```{r}
+icu_cohort %>%
+  filter(heart_rate > 200) %>% 
+  print()
+```
+I'm skeptical about the numbers in the 200's, but I think only 941 is a clear-cut error.
+
+
+```{r}
+icu_cohort %>%
+  filter(non_invasive_blood_pressure_mean > 300) %>%
+  print()
+
+```
+
+```{r}
+icu_cohort %>%
+  filter(non_invasive_blood_pressure_systolic > 300) %>%
+  print()
+
+```
+
+
+```{r}
+icu_cohort %>%
+  filter(temperature_fahrenheit < 90) %>%
+  print()
+```
+There is a small cluster of temperatures around 37, which likely corresponds to Celcius values rather than Fahrenheit. Though I could probably deduce what the true measurement was, I set all of these to `NA`, along with any other illogically low values (<80). The values in the 80s might be mistakes, but it's hard to be sure. 
+
+
+1. Heart rate of 941
+
+3. Blood pressure of 12262.00
+4. Blood pressure of 140119.00 
+
+
+```{r}
+icu_cohort %>%
+  filter(calcium > 18) %>%
+  print()
+```
+The value of 43 seems unrealistic, and I'm also skeptical about the 27.5. 
+
+
+```{r}
+icu_cohort %>%
+  filter(magnesium > 20) %>%
+  print()
+```
+
+```{r}
+icu_cohort %>%
+  filter(respiratory_rate > 60) %>%
+  print()
+```
+Respiratoy rate measurements above 20 are considered elevated. It seems more likely to me that the values above 100 are typographical errors (ie, 148 should be 14), but this is a judgment call. 
+
+
+Make replacements. I also renamed a few variables, for convenience.
+```{r}
+cleaned_cohort <- icu_cohort %>%
+  rename(systolic_bp = non_invasive_blood_pressure_systolic,
+         mean_bp = non_invasive_blood_pressure_mean,
+         temp = temperature_fahrenheit,
+         resp_rate = respiratory_rate) %>%
+  mutate(heart_rate = ifelse(heart_rate == 941, NA, heart_rate),
+         systolic_bp = ifelse(systolic_bp > 300, NA, systolic_bp),
+         mean_bp = ifelse(mean_bp > 300, NA, mean_bp),
+         temp = ifelse(temp < 80, NA, temp),
+         calcium = ifelse(calcium > 40, NA, calcium),
+         magnesium = ifelse(magnesium > 20, NA, magnesium),
+         resp_rate = ifelse(resp_rate > 100, NA, resp_rate))
+```
+
+I decided not to discard unusually low values of variables, since I don't have the knowledge to say whether those values would be possible.
+
+
+Double check some of the changes: 
+```{r}
+cleaned_cohort %>%
+  filter(systolic_bp > 300 | temp < 80 | resp_rate > 100) %>%
+  print()
+
+```
+
 ### Question 1.4
 Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
 
