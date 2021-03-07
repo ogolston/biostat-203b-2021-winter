@@ -2,7 +2,10 @@
 title: "Biostat 203B Homework 4"
 subtitle: Due Mar 12 @ 11:59PM
 author: "Olivia Golston"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
 ---
 
 ```{r, include = FALSE}
@@ -28,17 +31,63 @@ Through the Shiny app developed in HW3, we observe abundant missing values in th
 
     A more thorough book treatment of the practical imputation strategies is the book [*_Flexible Imputation of Missing Data_*](https://stefvanbuuren.name/fimd/) by Stef van Buuren. 
 
-1. Explain the jargon MCAR, MAR, and MNAR.
+### Question 1.1
+Explain the jargon MCAR, MAR, and MNAR.
 
-2. Explain in a couple of sentences how the Multiple Imputation by Chained Equations (MICE) work.
+**Solution**
 
-3. Perform a data quality check of the ICU stays data. Discard variables with substantial missingness, say >5000 `NA`s. Replace apparent data entry errors by `NA`s.
+MCAR, MAR, and MNAR are different classifications of missing data.
 
-4. Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
+MCAR stands for Missing Completely at Random. This occurs when there is no systematic pattern in what data is present or missing. In the MIMIC-IV data, an example would be if a lab report got lost by a fluke, so a patient's measurements were missing. It is equally likely that this could happen to any patient, so the data is missing completely at random.
 
-5. Make imputation diagnostic plots and explain what they mean.
+MAR stands for Missing at Random. This is when the missing data is more likely for certain subgroups of the study population, but is random within those groups. For example, it is possible that certain hospital departments are less meticulous about records keeping, so missing values - though completely random within the department - will be more common for patients in that particular department.
 
-6. Obtain a complete data set by averaging the 3 imputed data sets.
+MNAR stands for Not Missing at Random. This occurs when the missing values are present due to a non-random mechanism. There are multiple ways this could happen in the MIMIC-IV data:
+* Certain labs are only ordered for patients with particular conditions, so healthier patients may tend to have more missing values.
+* Unconscious or otherwise incapacitated patients may not be able to provide answers to demographic questions, such as marital status.
+* Certain departments may not collect certain pieces of data. 
+
+Understanding which of these 3 classifications applies is necessary when determining how to address the missing data. 
+
+Source: [Stef van Buuren's book](https://stefvanbuuren.name/fimd/sec-MCAR.html)
+
+
+### Question 1.2
+Explain in a couple of sentences how the Multiple Imputation by Chained Equations (MICE) work.
+
+**Solution**
+
+MICE uses available values in a dataset to make the best possible guess about what the missing values would have been.
+
+For the MIMIC-IV data, it will work as follows:
+
+1. Missing values are given a random value - these values will be replaced during the imputation process.
+2. For a column of interest (say, `Heart Rate`), the missing values are imputed using the joint correlation between the other variables and `Heart Rate`, using a Random Forest. A person with missing `Heart Rate`, but other lab/chart measurements and demographic characteristics associated with an elevated heart rate will be given a high value.
+3. This is repeated for other columns with missing data. 
+4. This process (steps 2-3) may be repeated a few times to reach convergence. 
+
+
+### Question 1.3 
+Perform a data quality check of the ICU stays data. Discard variables with substantial missingness, say >5000 `NA`s. Replace apparent data entry errors by `NA`s.
+
+**Solution**
+
+### Question 1.4
+Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
+
+**Solution**
+
+
+### Question 1.5
+Make imputation diagnostic plots and explain what they mean.
+
+**Solution**
+
+### Question 1.6
+Obtain a complete data set by averaging the 3 imputed data sets.
+
+**Solution**
+
 
 ## Q2. Predicting 30-day mortality
 
