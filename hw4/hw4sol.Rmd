@@ -239,7 +239,7 @@ Obtain a complete data set by averaging the 3 imputed data sets.
 
 Currently, miceRanger is not working for me. So I'll proceed with a temporary dataset, which drops all NA values. 
 ```{r}
-na_dropped <- cleaned_cohort %>%
+final_data <- cleaned_cohort %>%
   na.omit() %>%
   print()
 
@@ -256,11 +256,51 @@ Develop at least two analytic approaches for predicting the 30-day mortality of 
 3. Compare model prediction performance on the test set.
 
 ### Solution: Logistic Regression
+
+First, 80% of each outcome (death in 30 days or survived 30 days) into a training set, and the remaining 20% into the testing set. The partitioning was stratified based on outcome so that the probability of death in the training set would not randomly be too high or low. 
+```{r}
+dead <- final_data %>%
+  filter(death_in_month == TRUE)
+
+survived <- final_data %>%
+  filter(death_in_month == FALSE)
+
+set.seed(42)
+dead_train <- dead %>%
+  sample_frac(.8)
+
+dead_test <- dead %>%
+  anti_join(dead_train, by = "subject_id")
+
+survive_train <- survived %>%
+  sample_frac(.8)
+
+survive_test <- survived %>%
+  anti_join(survive_train, by = "subject_id")
+
+test <- rbind(survive_test, dead_test)
+train <- rbind(survive_train, dead_train)
+```
+
+Display possible features.
+```{r}
+colnames(train)
+```
+Some are irrelevant, such as admittime, anchor_year, etc. We are mostly interested in lab measurements and demographic factors. 
+
+For the training steps, only the `train` dataset will be used.  
 ```{r}
 
+mylogit <- glm(death_in_month ~ calcium + magnesium + wbc + resp_rate + ethnicity + 
+               insurance + chloride + potassium + temp + heart_rate + 
+               language + gender + age_at_adm + creatinine + sodium + 
+               systolic_bp + marital_status + bicarbonate + glucose + 
+               hematocrit + mean_bp, data = train, family = "binomial")
+```
 
 
-
+```{r}
+mylogit
 ```
 
 ### Solution: Neural Net
