@@ -183,19 +183,19 @@ cleaned_cohort <- icu_cohort %>%
   mutate(heart_rate = ifelse(heart_rate == 941, NA, heart_rate),
          systolic_bp = ifelse(systolic_bp > 300, NA, systolic_bp),
          mean_bp = ifelse(mean_bp > 300, NA, mean_bp),
-         temp = ifelse(temp < 80, NA, temp),
-         calcium = ifelse(calcium > 40, NA, calcium),
-         magnesium = ifelse(magnesium > 20, NA, magnesium),
-         resp_rate = ifelse(resp_rate > 100, NA, resp_rate))
+         temp = ifelse(temp < 80, NA, temp))
+         #calcium = ifelse(calcium > 40, NA, calcium),
+         #magnesium = ifelse(magnesium > 20, NA, magnesium),
+         #resp_rate = ifelse(resp_rate > 100, NA, resp_rate))
 ```
 
 I decided not to discard unusually low values of variables, since I don't have the knowledge to say whether those values would be possible.
 
 
-Double check some of the changes: 
+Double check the changes: 
 ```{r}
 cleaned_cohort %>%
-  filter(systolic_bp > 300 | temp < 80 | resp_rate > 100) %>%
+  filter(systolic_bp > 300 | temp < 80 | heart_rate > 800 | mean_bp > 300) %>%
   print()
 
 ```
@@ -204,12 +204,32 @@ cleaned_cohort %>%
 Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
 
 **Solution**
+```{r}
+miceObj <- miceRanger(
+    cleaned_cohort, 
+    m=3,
+    returnModels = TRUE,
+    verbose=FALSE
+)
+
+saveRDS(miceObj, "hw4_results.rds")
+
+```
 
 
 ### Question 1.5
 Make imputation diagnostic plots and explain what they mean.
 
 **Solution**
+```{r}
+
+plotDistributions(miceObj, vars='allNumeric')
+plotCorrelations(miceObj,vars='allNumeric')
+plotVarConvergence(miceObj,vars='allNumeric')
+plotModelError(miceObj,vars='allNumeric')
+
+
+```
 
 ### Question 1.6
 Obtain a complete data set by averaging the 3 imputed data sets.
@@ -226,3 +246,18 @@ Develop at least two analytic approaches for predicting the 30-day mortality of 
 2. Train the models using the training set.
 
 3. Compare model prediction performance on the test set.
+
+### Solution: Logistic Regression
+```{r}
+
+
+
+
+```
+
+### Solution: Neural Net
+```{r}
+
+
+```
+
