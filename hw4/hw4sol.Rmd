@@ -213,7 +213,6 @@ miceObj <- miceRanger(
 )
 
 saveRDS(miceObj, "hw4_results.rds")
-
 ```
 
 
@@ -236,6 +235,15 @@ Obtain a complete data set by averaging the 3 imputed data sets.
 
 **Solution**
 
+
+
+Currently, miceRanger is not working for me. So I'll proceed with a temporary dataset, which drops all NA values. 
+```{r}
+na_dropped <- cleaned_cohort %>%
+  na.omit() %>%
+  print()
+
+```
 
 ## Q2. Predicting 30-day mortality
 
