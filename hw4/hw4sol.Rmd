@@ -91,21 +91,31 @@ There are a lot of missing values. No patients have `dod` measurements, and most
 
 Among the chart and lab measurements, `arterial_blood_pressure_systolic`, `arterial_blood_pressure_mean`, and `lactate` all have a lot of missing values. These must not be measurements that are taken for every ICU patient, so this is a likely a "Missing Not at Random" scenario, and imputation would not be appropriate. 
 
-Finally, `edregtime` and `edouttime` are missing for a lot of people. These aren't of much interest, anyway, and can be dropped. 
+Finally, `edregtime` and `edouttime` are missing for a lot of people. These aren't of much interest, anyway, and can be dropped. I'm also going to drop any variables that won't be used for the final analysis, so anything other than lab measurements, chart measurements, gender, marital status, age, and ethnicity. 
 
-The remaining variables have <5000 missing values, so will be kept, and the missing values will be imputed. It's not known why these values of missing, so it may not truly be random. However, for the purposes of this project, the missingness will be viewed as random.
+
+The remaining variables are relevant for the final analysis and have <5000 missing values, so will be kept, and the missing values will be imputed. It's not known why these values of missing, so it may not truly be random. However, for the purposes of this project, the missingness will be viewed as random. 
 
 Drop the variables: 
 ```{r}
 drop_vars <- c("dod", "deathtime", "arterial_blood_pressure_systolic",
                "arterial_blood_pressure_mean", "lactate", "edregtime",
-               "edouttime")
+               "edouttime", "subject_id", "stay_id", "hadm_id", "intime",
+               "outtime", "last_careunit", "first_careunit", "los",
+               "dischtime", "admittime", "language", "anchor_year_group",
+               "anchor_year", "anchor_age", "hospital_expire_flag", "insurance",
+               "discharge_location", "admission_location", "admission_type")
 
 icu_cohort <- icu_cohort %>%
-  select(-drop_vars) %>% 
+  select(-all_of(drop_vars)) %>% 
   print()
 
+
+colnames(icu_cohort)
 ```
+
+Now there are only the demographic characteristics of interest, lab measurements, chart measurements, and the outcome variable in the data. 
+
 
 There also appear to be a good deal of data entry errors. Using my Shiny app, I looked for any extreme outliers or otherwise unusual values. 
 
