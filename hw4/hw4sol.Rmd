@@ -21,6 +21,7 @@ Load database libraries and the tidyverse frontend:
 library(tidyverse)
 library(lubridate)
 library(miceRanger)
+library(keras)
 ```
 
 ## Q1. Missing data
@@ -208,6 +209,7 @@ Impute missing values by `miceRanger` (request $m=3$ datasets). This step is ver
 miceObj <- miceRanger(
     cleaned_cohort, 
     m=3,
+    max.depth = 10,
     returnModels = TRUE,
     verbose=FALSE
 )
@@ -303,9 +305,66 @@ mylogit <- glm(death_in_month ~ calcium + magnesium + wbc + resp_rate + ethnicit
 mylogit
 ```
 
+```{r}
+drop <- c("subject_id", "hadm_id", "discharge_location", "intime", "los", "stay_id", 
+          "admittime", "dischtime", "hospital_expire_flag", "anchor_year_group",
+          "anchor_year", "anchor_age", "outtime")
+
+train <- train %>%
+  select(-all_of(drop))
+
+test <- test %>%
+  select(-all_of(drop))
+
+colnames(train)
+colnames(test)
+
+```
+
 ### Solution: Neural Net
 ```{r}
+x_train <- train %>% select(-death_in_month)
+y_train <- train %>% select(death_in_month)
+x_test <- test %>% select(-death_in_month)
+y_test <- test %>% select(death_in_month)
+```
 
 
+```{r}
+model <- keras_model_sequential() 
+model %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = c(784)) %>% 
+  layer_dropout(rate = 0.4) %>% 
+  layer_dense(units = 128, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 10, activation = 'softmax')
+summary(model)
+
+```
+
+
+```{r}
+model %>% compile(
+  loss = 'categorical_crossentropy',
+  optimizer = optimizer_rmsprop(),
+  metrics = c('accuracy')
+)
+```
+
+
+
+```{r}
+system.time({
+history <- model %>% fit(
+  x_train, y_train, 
+  epochs = 30, batch_size = 128, 
+  validation_split = 0.2
+)
+})
+```
+
+
+```{r}
+plot(history)
 ```
 
