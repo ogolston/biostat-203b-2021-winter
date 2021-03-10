@@ -21,7 +21,6 @@ Load database libraries and the tidyverse frontend:
 library(tidyverse)
 library(lubridate)
 library(miceRanger)
-library(keras)
 ```
 
 ## Q1. Missing data
@@ -194,10 +193,10 @@ cleaned_cohort <- icu_cohort %>%
   mutate(heart_rate = ifelse(heart_rate == 941, NA, heart_rate),
          systolic_bp = ifelse(systolic_bp > 300, NA, systolic_bp),
          mean_bp = ifelse(mean_bp > 300, NA, mean_bp),
-         temp = ifelse(temp < 80, NA, temp))
-         #calcium = ifelse(calcium > 40, NA, calcium),
-         #magnesium = ifelse(magnesium > 20, NA, magnesium),
-         #resp_rate = ifelse(resp_rate > 100, NA, resp_rate))
+         temp = ifelse(temp < 80, NA, temp),
+         calcium = ifelse(calcium > 40, NA, calcium),
+         magnesium = ifelse(magnesium > 20, NA, magnesium),
+         resp_rate = ifelse(resp_rate > 100, NA, resp_rate))
 ```
 
 I decided not to discard unusually low values of variables, since I don't have the knowledge to say whether those values would be possible.
@@ -218,7 +217,7 @@ Impute missing values by `miceRanger` (request $m=3$ datasets). This step is ver
 ```{r}
 miceObj <- miceRanger(
     cleaned_cohort, 
-    m=3,
+    m = 3,
     max.depth = 10,
     returnModels = TRUE,
     verbose=FALSE
@@ -267,6 +266,34 @@ Develop at least two analytic approaches for predicting the 30-day mortality of 
 
 3. Compare model prediction performance on the test set.
 
+
+Display possible features.
+```{r}
+colnames(final_data)
+```
+
+```{r}
+final_data %>%
+  count(marital_status)
+
+```
+
+There are 3 categorical variables that need to be converted using one-hot encoding. 
+```{r}
+final_data <- final_data %>%
+  mutate(female = ifelse(gender == "F", 1, 0),
+         amind = ifelse(ethnicity == "AMERICAN INDIAN/ALASKA NATIVE", 1, 0),
+         asian = ifelse(ethnicity == "ASIAN", 1, 0),
+         black = ifelse(ethnicity == "BLACK/AFRICAN AMERICAN", 1, 0),
+         other = ifelse(ethnicity == "OTHER", 1, 0),
+         divorced = ifelse(marital_status == "DIVORCED", 1, 0),
+         single = ifelse(marital_status == "SINGLE", 1, 0),
+         widowed = ifelse(marital_status == "WIDOWED", 1, 0),
+         death_in_month = ifelse(death_in_month == TRUE, 1, 0)) %>%
+  select(-c("gender", "ethnicity", "marital_status"))
+```
+
+
 ### Solution: Logistic Regression
 
 First, 80% of each outcome (death in 30 days or survived 30 days) into a training set, and the remaining 20% into the testing set. The partitioning was stratified based on outcome so that the probability of death in the training set would not randomly be too high or low. 
@@ -279,35 +306,36 @@ survived <- final_data %>%
 
 set.seed(42)
 dead_train <- dead %>%
-  sample_frac(.8)
+  sample_frac(.8) 
 
 dead_test <- dead %>%
-  anti_join(dead_train, by = "subject_id")
+  anti_join(dead_train)
 
 survive_train <- survived %>%
   sample_frac(.8)
 
 survive_test <- survived %>%
-  anti_join(survive_train, by = "subject_id")
+  anti_join(survive_train)
+
+nn_survive_train <- survive_train %>% 
+  sample_frac(.25)
 
 test <- rbind(survive_test, dead_test)
+rows <- sample(nrow(test))
+test <- test[rows, ]
+
 train <- rbind(survive_train, dead_train)
+rows <- sample(nrow(train))
+train <- train[rows, ]
+
+nntrain <- rbind(nn_survive_train, dead_train)
+rows <- sample(nrow(nntrain))
+nntrain <- nntrain[rows, ]
 ```
 
-Display possible features.
-```{r}
-colnames(train)
-```
-Some are irrelevant, such as admittime, anchor_year, etc. We are mostly interested in lab measurements and demographic factors. 
 
-For the training steps, only the `train` dataset will be used.  
 ```{r}
-
-mylogit <- glm(death_in_month ~ calcium + magnesium + wbc + resp_rate + ethnicity + 
-               insurance + chloride + potassium + temp + heart_rate + 
-               language + gender + age_at_adm + creatinine + sodium + 
-               systolic_bp + marital_status + bicarbonate + glucose + 
-               hematocrit + mean_bp, data = train, family = "binomial")
+mylogit <- glm(death_in_month ~ ., data = train, family = "binomial")
 ```
 
 
@@ -315,39 +343,44 @@ mylogit <- glm(death_in_month ~ calcium + magnesium + wbc + resp_rate + ethnicit
 mylogit
 ```
 
-```{r}
-drop <- c("subject_id", "hadm_id", "discharge_location", "intime", "los", "stay_id", 
-          "admittime", "dischtime", "hospital_expire_flag", "anchor_year_group",
-          "anchor_year", "anchor_age", "outtime")
-
-train <- train %>%
-  select(-all_of(drop))
-
-test <- test %>%
-  select(-all_of(drop))
-
-colnames(train)
-colnames(test)
-
-```
-
 ### Solution: Neural Net
 ```{r}
-x_train <- train %>% select(-death_in_month)
-y_train <- train %>% select(death_in_month)
-x_test <- test %>% select(-death_in_month)
-y_test <- test %>% select(death_in_month)
+library(keras)
 ```
 
+```{r}
+x_train <- nntrain %>% 
+  select(-death_in_month) %>% 
+  scale()
+
+y_train <- nntrain$death_in_month
+
+x_test <- test %>% 
+  select(-death_in_month) %>% 
+  scale()
+
+y_test <- test$death_in_month
+
+dim(x_train)
+```
+```{r}
+sum(y_train)/length(y_train)
+sum(y_test)/length(y_test)
+```
 
 ```{r}
 model <- keras_model_sequential() 
 model %>% 
-  layer_dense(units = 256, activation = 'relu', input_shape = c(784)) %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = c(24)) %>% 
   layer_dropout(rate = 0.4) %>% 
+  layer_dense(units = 256, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
   layer_dense(units = 128, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>%
-  layer_dense(units = 10, activation = 'softmax')
+  layer_dense(units = 128, activation = 'relu') %>%
+  layer_dense(units = 64, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 1, activation = 'sigmoid')
 summary(model)
 
 ```
@@ -355,8 +388,8 @@ summary(model)
 
 ```{r}
 model %>% compile(
-  loss = 'categorical_crossentropy',
-  optimizer = optimizer_rmsprop(),
+  loss = 'binary_crossentropy',
+  optimizer = 'adam',
   metrics = c('accuracy')
 )
 ```
@@ -364,17 +397,19 @@ model %>% compile(
 
 
 ```{r}
-system.time({
 history <- model %>% fit(
   x_train, y_train, 
-  epochs = 30, batch_size = 128, 
+  epochs = 30, batch_size = 64, 
   validation_split = 0.2
 )
-})
 ```
 
 
 ```{r}
 plot(history)
 ```
+
+
+
+
 
