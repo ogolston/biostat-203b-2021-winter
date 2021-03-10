@@ -1,6 +1,6 @@
 ---
 title: "Biostat 203B Homework 4"
-subtitle: Due Mar 12 @ 11:59PM
+subtitle: Due Mar 19 @ 11:59PM
 author: "Olivia Golston"
 output: 
   html_document:
@@ -321,8 +321,8 @@ survive_train <- survived %>%
 survive_test <- survived %>%
   anti_join(survive_train)
 
-nn_survive_train <- survive_train %>% 
-  sample_frac(.25)
+nn_survive_train <- survive_train
+#%>% sample_frac(.125)
 
 test <- rbind(survive_test, dead_test)
 rows <- sample(nrow(test))
@@ -375,10 +375,10 @@ sum(y_test)/length(y_test)
 ```{r}
 model <- keras_model_sequential() 
 model %>% 
-  layer_dense(units = 128, activation = 'relu', input_shape = c(27)) %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = c(27)) %>% 
   layer_dropout(rate = 0.4) %>% 
   layer_dense(units = 64, activation = 'relu') %>%
-  layer_dropout(rate = 0.3) %>%
+  layer_dropout(rate = 0.3) %>% 
   layer_dense(units = 1, activation = 'sigmoid')
 summary(model)
 
@@ -398,7 +398,7 @@ model %>% compile(
 ```{r}
 history <- model %>% fit(
   x_train, y_train, 
-  epochs = 200, batch_size = 64, 
+  epochs = 100, batch_size = 64, 
   validation_split = 0.3
 )
 ```
@@ -409,6 +409,19 @@ plot(history)
 ```
 
 
+```{r}
+model %>% 
+  evaluate(x_test, y_test)
+```
 
+```{r}
+predictions <- model %>% predict_classes(x_test)
+```
 
+```{r}
 
+table(factor(predictions, 
+      levels=min(test$death_in_month):max(test$death_in_month)),
+      factor(test$death_in_month, levels=min(test$death_in_month):max(test$death_in_month)))
+
+```
