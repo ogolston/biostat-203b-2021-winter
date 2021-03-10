@@ -252,6 +252,7 @@ Currently, miceRanger is not working for me. So I'll proceed with a temporary da
 ```{r}
 final_data <- cleaned_cohort %>%
   na.omit() %>%
+  filter(ethnicity != "UNKNOWN" & ethnicity != "UNABLE TO OBTAIN") %>%
   print()
 
 ```
@@ -274,7 +275,7 @@ colnames(final_data)
 
 ```{r}
 final_data %>%
-  count(marital_status)
+  count(ethnicity)
 
 ```
 
@@ -282,6 +283,8 @@ There are 3 categorical variables that need to be converted using one-hot encodi
 ```{r}
 final_data <- final_data %>%
   mutate(female = ifelse(gender == "F", 1, 0),
+         male = ifelse(gender == "M", 1, 0),
+         white = ifelse(ethnicity == "WHITE", 1, 0),
          amind = ifelse(ethnicity == "AMERICAN INDIAN/ALASKA NATIVE", 1, 0),
          asian = ifelse(ethnicity == "ASIAN", 1, 0),
          black = ifelse(ethnicity == "BLACK/AFRICAN AMERICAN", 1, 0),
@@ -289,6 +292,7 @@ final_data <- final_data %>%
          divorced = ifelse(marital_status == "DIVORCED", 1, 0),
          single = ifelse(marital_status == "SINGLE", 1, 0),
          widowed = ifelse(marital_status == "WIDOWED", 1, 0),
+         married = ifelse(marital_status == "MARRIED", 1, 0),
          death_in_month = ifelse(death_in_month == TRUE, 1, 0)) %>%
   select(-c("gender", "ethnicity", "marital_status"))
 ```
@@ -371,13 +375,8 @@ sum(y_test)/length(y_test)
 ```{r}
 model <- keras_model_sequential() 
 model %>% 
-  layer_dense(units = 256, activation = 'relu', input_shape = c(24)) %>% 
+  layer_dense(units = 128, activation = 'relu', input_shape = c(27)) %>% 
   layer_dropout(rate = 0.4) %>% 
-  layer_dense(units = 256, activation = 'relu') %>%
-  layer_dropout(rate = 0.3) %>%
-  layer_dense(units = 128, activation = 'relu') %>%
-  layer_dropout(rate = 0.3) %>%
-  layer_dense(units = 128, activation = 'relu') %>%
   layer_dense(units = 64, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>%
   layer_dense(units = 1, activation = 'sigmoid')
@@ -399,8 +398,8 @@ model %>% compile(
 ```{r}
 history <- model %>% fit(
   x_train, y_train, 
-  epochs = 30, batch_size = 64, 
-  validation_split = 0.2
+  epochs = 200, batch_size = 64, 
+  validation_split = 0.3
 )
 ```
 
