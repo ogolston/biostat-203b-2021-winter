@@ -118,72 +118,83 @@ Now there are only the demographic characteristics of interest, lab measurements
 
 There also appear to be a good deal of data entry errors. Using my Shiny app, I looked for any extreme outliers or otherwise unusual values. 
 
-One challenge in this process is that I don't have the medical knowledge to judge whether extreme outliers are legitimate readings or not. If the extreme outliers are legitimate, they could be strong predictors for death. On the other hand, if they are illegitimate, they could severely skew the results. 
+One challenge in this process is that I don't have the medical knowledge to judge whether the extreme values are legitimate readings or not. If the extreme outliers are accurate, it's probably better to keep them, since they could be a sign of very poor health and might help predict death. On the other hand, if they are illegitimate, they could skew the results. 
 
-I did my best to research what physically possible values are and only remove ones that I believe are truly unrealistic. However, it's possible I was too conservative or not conservative enough. 
+I did my best to research what physically possible values are and only remove ones that I believe are truly unrealistic and the result of data entry errors. However, it's possible I was too conservative with my selections. In a real study, I would consult with an expert before deciding which values to discard.
 
 
-I used the Shiny app to find lab and chart measurements with odd values. 
+In my Shiny app, I found a few variables with especially odd values, outlined below.
+
+**Heart Rate**
 ```{r}
 icu_cohort %>%
   filter(heart_rate > 200) %>% 
   print()
 ```
-I'm skeptical about the numbers in the 200's, but I think only 941 is a clear-cut error.
+I'm skeptical about the numbers in the 200's, but I think 941 is the only unambiguous data entry error.
 
 
+**Mean Blood Pressure**
 ```{r}
 icu_cohort %>%
-  filter(non_invasive_blood_pressure_mean > 300) %>%
+  filter(non_invasive_blood_pressure_mean > 300 | non_invasive_blood_pressure_mean < 25) %>%
+  select(non_invasive_blood_pressure_systolic, 
+         non_invasive_blood_pressure_mean, heart_rate) %>%
   print()
 
 ```
+All of these values are unrealistically high, so should be discarded. There are also suspicious values below 30, but I'm not sure if those are truly data entry errors, or if they indicate a significant medical event such as severe blood loss, or even death.
 
+**Systolic Blood Pressure**
 ```{r}
 icu_cohort %>%
   filter(non_invasive_blood_pressure_systolic > 300) %>%
+  select(non_invasive_blood_pressure_systolic, 
+         non_invasive_blood_pressure_mean) %>%
   print()
 
 ```
+These values are unrealistically high. For reasons listed above, aberrantly low values were not discarded.
 
-
+**Temperature**
 ```{r}
 icu_cohort %>%
   filter(temperature_fahrenheit < 90) %>%
+  select(heart_rate, temperature_fahrenheit, respiratory_rate) %>%
   print()
 ```
-There is a small cluster of temperatures around 37, which likely corresponds to Celcius values rather than Fahrenheit. Though I could probably deduce what the true measurement was, I set all of these to `NA`, along with any other illogically low values (<80). The values in the 80s might be mistakes, but it's hard to be sure. 
+There is a small cluster of temperatures around 37, which likely corresponds to Celcius values rather than Fahrenheit. Though I could probably deduce what the true measurement was, I set all of these to `NA`, along with any other illogically low values (<80). Values in the 80s might also be mistakes, but it's hard to be sure, since they could be cases of hypothermia. 
 
 
-1. Heart rate of 941
-
-3. Blood pressure of 12262.00
-4. Blood pressure of 140119.00 
-
-
+**Calcium**
 ```{r}
 icu_cohort %>%
   filter(calcium > 18) %>%
   print()
 ```
-The value of 43 seems unrealistic, and I'm also skeptical about the 27.5. 
+The value of 43 seems unrealistic, and I'm also skeptical about the 27.5. These are so much larger than the other values, that it seems unlikely they are legitimate. Even if they are real, they are so rare that it's not really applicable to the wider population. 
 
-
+**Magnesium**
 ```{r}
 icu_cohort %>%
-  filter(magnesium > 20) %>%
+  filter(magnesium > 10) %>%
+  select(magnesium) %>%
   print()
 ```
+These values are much larger than all other values for magnesium.  Again, even if they are real, any trends likely wouldn't generalize to the larger population. 
 
+**Respiratory Rate**
 ```{r}
 icu_cohort %>%
-  filter(respiratory_rate > 60) %>%
+  filter(respiratory_rate > 50) %>%
+  arrange(desc(respiratory_rate)) %>%
+  select(heart_rate, respiratory_rate, death_in_month) %>%
   print()
 ```
-Respiratoy rate measurements above 20 are considered elevated. It seems more likely to me that the values above 100 are typographical errors (ie, 148 should be 14), but this is a judgment call. 
+Respiratoy rate measurements above 20 are considered elevated. Values above 50 seem questionable, but I think 80 is a safe cutoff for assuming errors, since there is a "cluster" of values in the 67-73 range. I decided not to discard low values, since there are reasons why patients may have a low respiratory rate (choking, dead, requiring mechanical ventilation, etc).
 
 
-Make replacements. I also renamed a few variables, for convenience.
+Replace the identified aberrant values with `NA`. I also renamed a few variables, for convenience:
 ```{r}
 cleaned_cohort <- icu_cohort %>%
   rename(systolic_bp = non_invasive_blood_pressure_systolic,
@@ -195,14 +206,14 @@ cleaned_cohort <- icu_cohort %>%
          mean_bp = ifelse(mean_bp > 300, NA, mean_bp),
          temp = ifelse(temp < 80, NA, temp),
          calcium = ifelse(calcium > 40, NA, calcium),
-         magnesium = ifelse(magnesium > 20, NA, magnesium),
-         resp_rate = ifelse(resp_rate > 100, NA, resp_rate))
+         magnesium = ifelse(magnesium > 10, NA, magnesium),
+         resp_rate = ifelse(resp_rate > 80, NA, resp_rate))
 ```
 
-I decided not to discard unusually low values of variables, since I don't have the knowledge to say whether those values would be possible.
 
 
-Double check the changes: 
+
+Double check some of the changes: 
 ```{r}
 cleaned_cohort %>%
   filter(systolic_bp > 300 | temp < 80 | heart_rate > 800 | mean_bp > 300) %>%
@@ -321,8 +332,8 @@ survive_train <- survived %>%
 survive_test <- survived %>%
   anti_join(survive_train)
 
-nn_survive_train <- survive_train
-#%>% sample_frac(.125)
+nn_survive_train <- survive_train %>% 
+  sample_frac(.5)
 
 test <- rbind(survive_test, dead_test)
 rows <- sample(nrow(test))
