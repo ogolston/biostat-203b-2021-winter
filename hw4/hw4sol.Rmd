@@ -332,9 +332,13 @@ dataList
 
 
 
-For now, will just use the first result.
+Average the 3 imputed datasets: 
 ```{r}
-final_data <- dataList[[1]]
+data1 <- model.matrix(~., dataList[[1]])
+data2 <- model.matrix(~., dataList[[2]])
+data3 <- model.matrix(~., dataList[[3]])
+
+final_data_matrix <- (data1 + data2 + data3)/3
 ```
 
 ## Q2. Predicting 30-day mortality
@@ -348,35 +352,12 @@ Develop at least two analytic approaches for predicting the 30-day mortality of 
 3. Compare model prediction performance on the test set.
 
 
-Display possible features.
+Convert back to a data frame and display possible features.
 ```{r}
+final_data <- as.data.frame(final_data_matrix) %>%
+  select(-c("(Intercept)"))
+
 colnames(final_data)
-```
-
-```{r}
-final_data %>%
-  count(ethnicity)
-
-```
-
-There are 3 categorical variables that need to be converted using one-hot encoding. 
-```{r}
-final_data <- final_data %>%
-  mutate(female = ifelse(gender == "F", 1, 0),
-         male = ifelse(gender == "M", 1, 0),
-         white = ifelse(ethnicity == "WHITE", 1, 0),
-         amind = ifelse(ethnicity == "AMERICAN INDIAN/ALASKA NATIVE", 1, 0),
-         asian = ifelse(ethnicity == "ASIAN", 1, 0),
-         black = ifelse(ethnicity == "BLACK/AFRICAN AMERICAN", 1, 0),
-         unknown = ifelse(ethnicity == "UNABLE TO OBTAIN" | 
-                            ethnicity == "UNKNOWN", 1, 0),
-         other = ifelse(ethnicity == "OTHER", 1, 0),
-         divorced = ifelse(marital_status == "DIVORCED", 1, 0),
-         single = ifelse(marital_status == "SINGLE", 1, 0),
-         widowed = ifelse(marital_status == "WIDOWED", 1, 0),
-         married = ifelse(marital_status == "MARRIED", 1, 0),
-         death_in_month = ifelse(death_in_month == TRUE, 1, 0)) %>%
-  select(-c("gender", "ethnicity", "marital_status"))
 ```
 
 
@@ -385,10 +366,10 @@ final_data <- final_data %>%
 First, 80% of each outcome (death in 30 days or survived 30 days) into a training set, and the remaining 20% into the testing set. The partitioning was stratified based on outcome so that the probability of death in the training set would not randomly be too high or low. 
 ```{r}
 dead <- final_data %>%
-  filter(death_in_month == TRUE)
+  filter(death_in_monthTRUE == 1)
 
 survived <- final_data %>%
-  filter(death_in_month == FALSE)
+  filter(death_in_monthTRUE == 0)
 
 set.seed(42)
 dead_train <- dead %>%
@@ -413,22 +394,22 @@ rows <- sample(nrow(train))
 train <- train[rows, ]
 
 x_train <- train %>% 
-  select(-death_in_month) %>% 
+  select(-death_in_monthTRUE) %>% 
   scale()
 
-y_train <- train$death_in_month
+y_train <- train$death_in_monthTRUE
 
 x_test <- test %>% 
-  select(-death_in_month) %>% 
+  select(-death_in_monthTRUE) %>% 
   scale()
 
-y_test <- test$death_in_month
+y_test <- test$death_in_monthTRUE
 
 ```
 
 
 ```{r}
-mylogit <- glm(death_in_month ~ ., data = train, family = "binomial")
+mylogit <- glm(death_in_monthTRUE ~ ., data = train, family = "binomial")
 mylogit
 ```
 
@@ -450,24 +431,24 @@ coef(cvfit, s = "lambda.1se")
 
 ```
 ```{r}
-lassopredict <- predict(cvfit, newx = x_test, type = "class", s = "lambda.1se")
+lassopredict <- predict(cvfit, newx = x_test, type = "class", s = "lambda.min")
 ```
 
 ```{r}
 table(factor(lassopredict, 
-      levels=min(test$death_in_month):max(test$death_in_month)),
-      factor(test$death_in_month, levels=min(test$death_in_month):max(test$death_in_month)))
+      levels=min(test$death_in_monthTRUE):max(test$death_in_monthTRUE)),
+      factor(test$death_in_monthTRUE, levels=min(test$death_in_monthTRUE):max(test$death_in_monthTRUE)))
 
 ```
 
 
 ### Solution: Neural Net
 ```{r}
+detach("package:miceRanger", unload = TRUE)
 library(keras)
 ```
 
 ```{r}
-
 nn_survive_train <- survive_train %>% 
   sample_frac(.5)
 
@@ -476,13 +457,15 @@ rows <- sample(nrow(nntrain))
 nntrain <- nntrain[rows, ]
 
 x_train <- nntrain %>% 
-  select(-death_in_month) %>% 
+  select(-death_in_monthTRUE) %>% 
   scale()
 
-y_train <- nntrain$death_in_month
+y_train <- nntrain$death_in_monthTRUE
 
 dim(x_train)
 ```
+
+
 ```{r}
 sum(y_train)/length(y_train)
 sum(y_test)/length(y_test)
@@ -514,7 +497,7 @@ model %>% compile(
 ```{r}
 history <- model %>% fit(
   x_train, y_train, 
-  epochs = 100, batch_size = 64, 
+  epochs = 20, batch_size = 64, 
   validation_split = 0.3
 )
 ```
@@ -535,9 +518,8 @@ predictions <- model %>% predict_classes(x_test)
 ```
 
 ```{r}
-
 table(factor(predictions, 
-      levels=min(test$death_in_month):max(test$death_in_month)),
-      factor(test$death_in_month, levels=min(test$death_in_month):max(test$death_in_month)))
+      levels=min(test$death_in_monthTRUE):max(test$death_in_monthTRUE)),
+      factor(test$death_in_monthTRUE, levels=min(test$death_in_monthTRUE):max(test$death_in_monthTRUE)))
 
 ```
