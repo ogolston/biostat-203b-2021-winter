@@ -120,8 +120,7 @@ There also appear to be a good deal of data entry errors. Using my Shiny app, I 
 
 One challenge in this process is that I don't have the medical knowledge to judge whether the extreme values are legitimate readings or not. If the extreme outliers are accurate, it's probably better to keep them, since they could be a sign of very poor health and might help predict death. On the other hand, if they are illegitimate, they could skew the results. 
 
-I did my best to research what physically possible values are and only remove ones that I believe are truly unrealistic and the result of data entry errors. However, it's possible I was too conservative with my selections. In a real study, I would consult with an expert before deciding which values to discard.
-
+I did my best to research what physically possible values are and only remove ones that I believe are truly unrealistic and the result of data entry errors. However, it's possible I was too conservative with my selections. However, I wanted to ensure that valid information was not thrown out. In a real study, I would consult with an expert before deciding which values to discard.
 
 In my Shiny app, I found a few variables with especially odd values, outlined below.
 
@@ -169,19 +168,40 @@ There is a small cluster of temperatures around 37, which likely corresponds to 
 **Calcium**
 ```{r}
 icu_cohort %>%
-  filter(calcium > 18) %>%
+  filter(calcium > 18 | calcium < 1) %>%
   print()
 ```
-The value of 43 seems unrealistic, and I'm also skeptical about the 27.5. These are so much larger than the other values, that it seems unlikely they are legitimate. Even if they are real, they are so rare that it's not really applicable to the wider population. 
+The value of 43 seems unrealistic, and I'm also skeptical about the 27.5. These are so much larger than the other values, that it seems unlikely they are legitimate. Even if they are real, they are so rare that it's not really applicable to the wider population. Values below 5 are rare, but I suspect values of 0 may be data entry errors.
+
+**Creatinine**
+```{r}
+icu_cohort %>%
+  filter(creatinine > 20) %>%
+  select(creatinine) %>%
+  print()
+```
+Based on the Shiny app, values above 10 are unusual, but there is a marked dropoff at 20. 
 
 **Magnesium**
 ```{r}
 icu_cohort %>%
-  filter(magnesium > 10) %>%
+  filter(magnesium > 10 | magnesium < 1) %>%
   select(magnesium) %>%
   print()
 ```
 These values are much larger than all other values for magnesium.  Again, even if they are real, any trends likely wouldn't generalize to the larger population. 
+
+**Glucose**
+```{r}
+summary(icu_cohort$glucose)
+
+icu_cohort %>%
+  filter(glucose > 1000) %>%
+  select(glucose) %>%
+  print()
+```
+Glucose has a very large range, and there are extreme high and low values. I suspect this is related to diabetic crises, so I decided not to discard any values. 
+
 
 **Respiratory Rate**
 ```{r}
@@ -193,6 +213,33 @@ icu_cohort %>%
 ```
 Respiratoy rate measurements above 20 are considered elevated. Values above 50 seem questionable, but I think 80 is a safe cutoff for assuming errors, since there is a "cluster" of values in the 67-73 range. I decided not to discard low values, since there are reasons why patients may have a low respiratory rate (choking, dead, requiring mechanical ventilation, etc).
 
+**Potassium**
+```{r}
+icu_cohort %>%
+  filter(potassium > 8) %>%
+  select(potassium) %>%
+  print()
+```
+
+**Sodium**
+```{r}
+icu_cohort %>%
+  filter(sodium < 100) %>%
+  select(sodium) %>%
+  print()
+```
+
+**WBC**
+Has some extreme high/low values, but they might be feasible in cases of cancer/severe infections, so I decided not to discard anything.
+
+**Ethnicity**
+```{r}
+icu_cohort %>%
+  group_by(ethnicity) %>%
+  count() %>%
+  print()
+```
+For ethnicity, there are "NA" values in hiding - "Unknown" and "Unable to obtain." However, I don't think imputation would be valid for these values, since the other variables in the data would not be very predictive of race. 
 
 Replace the identified aberrant values with `NA`. I also renamed a few variables, for convenience:
 ```{r}
@@ -205,11 +252,10 @@ cleaned_cohort <- icu_cohort %>%
          systolic_bp = ifelse(systolic_bp > 300, NA, systolic_bp),
          mean_bp = ifelse(mean_bp > 300, NA, mean_bp),
          temp = ifelse(temp < 80, NA, temp),
-         calcium = ifelse(calcium > 40, NA, calcium),
+         calcium = ifelse(calcium > 25 | calcium < 1, NA, calcium),
          magnesium = ifelse(magnesium > 10, NA, magnesium),
          resp_rate = ifelse(resp_rate > 80, NA, resp_rate))
 ```
-
 
 
 
