@@ -127,10 +127,10 @@ In my Shiny app, I found a few variables with especially odd values, outlined be
 **Heart Rate**
 ```{r}
 icu_cohort %>%
-  filter(heart_rate > 200) %>% 
+  filter(heart_rate > 200 | heart_rate == 0) %>% 
   print()
 ```
-I'm skeptical about the numbers in the 200's, but I think 941 is the only unambiguous data entry error.
+I'm skeptical about the numbers in the 200's, but I think 941 is the only unambiguous data entry error. Heart rates of 0 are also suspicious, but these may be cases where someone flatlined but then was (potentially) resuscitated, so I won't discard those values. 
 
 
 **Mean Blood Pressure**
@@ -142,7 +142,7 @@ icu_cohort %>%
   print()
 
 ```
-All of these values are unrealistically high, so should be discarded. There are also suspicious values below 30, but I'm not sure if those are truly data entry errors, or if they indicate a significant medical event such as severe blood loss, or even death.
+All of these values are unrealistically high, so should be discarded. There are also suspicious values below 30, but I'm not sure if those are truly data entry errors, or if they indicate a significant medical event such as severe blood loss or a heart event, so I don't discard those.
 
 **Systolic Blood Pressure**
 ```{r}
@@ -177,15 +177,14 @@ The value of 43 seems unrealistic, and I'm also skeptical about the 27.5. These 
 ```{r}
 icu_cohort %>%
   filter(creatinine > 20) %>%
-  select(creatinine) %>%
   print()
 ```
-Based on the Shiny app, values above 10 are unusual, but there is a marked dropoff at 20. 
+Based on the Shiny app, values above 10 are unusual, but there is a marked dropoff at 20-25. 
 
 **Magnesium**
 ```{r}
 icu_cohort %>%
-  filter(magnesium > 10 | magnesium < 1) %>%
+  filter(magnesium > 10) %>%
   select(magnesium) %>%
   print()
 ```
@@ -197,10 +196,11 @@ summary(icu_cohort$glucose)
 
 icu_cohort %>%
   filter(glucose > 1000) %>%
+  arrange(desc(glucose)) %>%
   select(glucose) %>%
   print()
 ```
-Glucose has a very large range, and there are extreme high and low values. I suspect this is related to diabetic crises, so I decided not to discard any values. 
+Glucose has a very large range, and there are extreme high and low values. I suspect this is related to diabetic crises and may represent real values. However, even among the extreme high values, 2440 seems unusual, so I decided to discard it. 
 
 
 **Respiratory Rate**
@@ -208,7 +208,7 @@ Glucose has a very large range, and there are extreme high and low values. I sus
 icu_cohort %>%
   filter(respiratory_rate > 50) %>%
   arrange(desc(respiratory_rate)) %>%
-  select(heart_rate, respiratory_rate, death_in_month) %>%
+  select(respiratory_rate) %>%
   print()
 ```
 Respiratoy rate measurements above 20 are considered elevated. Values above 50 seem questionable, but I think 80 is a safe cutoff for assuming errors, since there is a "cluster" of values in the 67-73 range. I decided not to discard low values, since there are reasons why patients may have a low respiratory rate (choking, dead, requiring mechanical ventilation, etc).
@@ -217,9 +217,11 @@ Respiratoy rate measurements above 20 are considered elevated. Values above 50 s
 ```{r}
 icu_cohort %>%
   filter(potassium > 8) %>%
+  arrange(desc(potassium)) %>%
   select(potassium) %>%
   print()
 ```
+13.0 is extreme, even among the extreme values.
 
 **Sodium**
 ```{r}
@@ -228,6 +230,7 @@ icu_cohort %>%
   select(sodium) %>%
   print()
 ```
+Though extreme, there is a cluster of values in the 90's, so these may be legitimate. I decided not to discard. 
 
 **WBC**
 Has some extreme high/low values, but they might be feasible in cases of cancer/severe infections, so I decided not to discard anything.
@@ -239,7 +242,8 @@ icu_cohort %>%
   count() %>%
   print()
 ```
-For ethnicity, there are "NA" values in hiding - "Unknown" and "Unable to obtain." However, I don't think imputation would be valid for these values, since the other variables in the data would not be very predictive of race. 
+For ethnicity, there are "NA" values in hiding - "Unknown" and "Unable to obtain." These values shouldn't be predictivive, but multiple imputation also seems a bit questionable. I decided to leave these values as is. 
+
 
 Replace the identified aberrant values with `NA`. I also renamed a few variables, for convenience:
 ```{r}
@@ -253,7 +257,10 @@ cleaned_cohort <- icu_cohort %>%
          mean_bp = ifelse(mean_bp > 300, NA, mean_bp),
          temp = ifelse(temp < 80, NA, temp),
          calcium = ifelse(calcium > 25 | calcium < 1, NA, calcium),
+         creatinine = ifelse(creatinine > 25, NA, creatinine),
          magnesium = ifelse(magnesium > 10, NA, magnesium),
+         glucose = ifelse(glucose > 2000, NA, glucose),
+         potassium = ifelse(potassium == 13, NA, potassium),
          resp_rate = ifelse(resp_rate > 80, NA, resp_rate))
 ```
 
@@ -271,7 +278,7 @@ cleaned_cohort %>%
 Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
 
 **Solution**
-```{r}
+```{r eval = F}
 miceObj <- miceRanger(
     cleaned_cohort, 
     m = 3,
@@ -289,6 +296,7 @@ Make imputation diagnostic plots and explain what they mean.
 
 **Solution**
 ```{r}
+miceObj = readRDS("hw4_results.rds")
 
 plotDistributions(miceObj, vars='allNumeric')
 plotCorrelations(miceObj,vars='allNumeric')
