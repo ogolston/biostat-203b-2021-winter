@@ -299,27 +299,42 @@ Make imputation diagnostic plots and explain what they mean.
 miceObj = readRDS("hw4_results.rds")
 
 plotDistributions(miceObj, vars='allNumeric')
+```
+
+
+```{r}
 plotCorrelations(miceObj,vars='allNumeric')
+```
+
+
+
+```{r}
 plotVarConvergence(miceObj,vars='allNumeric')
+```
+
+
+
+
+```{r}
 plotModelError(miceObj,vars='allNumeric')
-
-
 ```
 
 ### Question 1.6
 Obtain a complete data set by averaging the 3 imputed data sets.
 
 **Solution**
-
-
-
-Currently, miceRanger is not working for me. So I'll proceed with a temporary dataset, which drops all NA values. 
 ```{r}
-final_data <- cleaned_cohort %>%
-  na.omit() %>%
-  filter(ethnicity != "UNKNOWN" & ethnicity != "UNABLE TO OBTAIN") %>%
-  print()
+dataList <- completeData(miceObj)
+dataList
 
+```
+
+
+
+
+For now, will just use the first result.
+```{r}
+final_data <- dataList[[1]]
 ```
 
 ## Q2. Predicting 30-day mortality
@@ -353,6 +368,8 @@ final_data <- final_data %>%
          amind = ifelse(ethnicity == "AMERICAN INDIAN/ALASKA NATIVE", 1, 0),
          asian = ifelse(ethnicity == "ASIAN", 1, 0),
          black = ifelse(ethnicity == "BLACK/AFRICAN AMERICAN", 1, 0),
+         unknown = ifelse(ethnicity == "UNABLE TO OBTAIN" | 
+                            ethnicity == "UNKNOWN", 1, 0),
          other = ifelse(ethnicity == "OTHER", 1, 0),
          divorced = ifelse(marital_status == "DIVORCED", 1, 0),
          single = ifelse(marital_status == "SINGLE", 1, 0),
@@ -386,8 +403,6 @@ survive_train <- survived %>%
 survive_test <- survived %>%
   anti_join(survive_train)
 
-nn_survive_train <- survive_train %>% 
-  sample_frac(.5)
 
 test <- rbind(survive_test, dead_test)
 rows <- sample(nrow(test))
@@ -397,20 +412,54 @@ train <- rbind(survive_train, dead_train)
 rows <- sample(nrow(train))
 train <- train[rows, ]
 
-nntrain <- rbind(nn_survive_train, dead_train)
-rows <- sample(nrow(nntrain))
-nntrain <- nntrain[rows, ]
+x_train <- train %>% 
+  select(-death_in_month) %>% 
+  scale()
+
+y_train <- train$death_in_month
+
+x_test <- test %>% 
+  select(-death_in_month) %>% 
+  scale()
+
+y_test <- test$death_in_month
+
 ```
 
 
 ```{r}
 mylogit <- glm(death_in_month ~ ., data = train, family = "binomial")
-```
-
-
-```{r}
 mylogit
 ```
+
+```{r}
+library(glmnet)
+fit = glmnet(x_train, y_train, family = "binomial")
+
+```
+
+```{r}
+plot(fit)
+```
+
+```{r}
+cvfit = cv.glmnet(x_train, y_train, family = "binomial")
+plot(cvfit)
+coef(cvfit, s = "lambda.1se")
+
+
+```
+```{r}
+lassopredict <- predict(cvfit, newx = x_test, type = "class", s = "lambda.1se")
+```
+
+```{r}
+table(factor(lassopredict, 
+      levels=min(test$death_in_month):max(test$death_in_month)),
+      factor(test$death_in_month, levels=min(test$death_in_month):max(test$death_in_month)))
+
+```
+
 
 ### Solution: Neural Net
 ```{r}
@@ -418,17 +467,19 @@ library(keras)
 ```
 
 ```{r}
+
+nn_survive_train <- survive_train %>% 
+  sample_frac(.5)
+
+nntrain <- rbind(nn_survive_train, dead_train)
+rows <- sample(nrow(nntrain))
+nntrain <- nntrain[rows, ]
+
 x_train <- nntrain %>% 
   select(-death_in_month) %>% 
   scale()
 
 y_train <- nntrain$death_in_month
-
-x_test <- test %>% 
-  select(-death_in_month) %>% 
-  scale()
-
-y_test <- test$death_in_month
 
 dim(x_train)
 ```
