@@ -297,7 +297,10 @@ Make imputation diagnostic plots and explain what they mean.
 **Solution**
 ```{r}
 miceObj = readRDS("hw4_results.rds")
+```
 
+
+```{r}
 plotDistributions(miceObj, vars='allNumeric')
 ```
 
@@ -427,8 +430,6 @@ plot(fit)
 cvfit = cv.glmnet(x_train, y_train, family = "binomial")
 plot(cvfit)
 coef(cvfit, s = "lambda.1se")
-
-
 ```
 ```{r}
 lassopredict <- predict(cvfit, newx = x_test, type = "class", s = "lambda.min")
