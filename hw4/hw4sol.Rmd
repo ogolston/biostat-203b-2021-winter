@@ -450,8 +450,8 @@ library(keras)
 ```
 
 ```{r}
-nn_survive_train <- survive_train %>% 
-  sample_frac(.5)
+nn_survive_train <- survive_train 
+ #%>%  sample_frac(.5)
 
 nntrain <- rbind(nn_survive_train, dead_train)
 rows <- sample(nrow(nntrain))
@@ -476,7 +476,9 @@ sum(y_test)/length(y_test)
 model <- keras_model_sequential() 
 model %>% 
   layer_dense(units = 256, activation = 'relu', input_shape = c(27)) %>% 
-  layer_dropout(rate = 0.4) %>% 
+  layer_dropout(rate = 0.3) %>% 
+  layer_dense(units = 64, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>% 
   layer_dense(units = 64, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>% 
   layer_dense(units = 1, activation = 'sigmoid')
@@ -498,7 +500,7 @@ model %>% compile(
 ```{r}
 history <- model %>% fit(
   x_train, y_train, 
-  epochs = 20, batch_size = 64, 
+  epochs = 20, batch_size = 32, 
   validation_split = 0.3
 )
 ```
@@ -515,12 +517,15 @@ model %>%
 ```
 
 ```{r}
-predictions <- model %>% predict_classes(x_test)
+predictions <- model %>% 
+  predict(x_test) > 0.5 
+
+predictions <- as.numeric(predictions)
 ```
+
 
 ```{r}
-table(factor(predictions, 
-      levels=min(test$death_in_monthTRUE):max(test$death_in_monthTRUE)),
-      factor(test$death_in_monthTRUE, levels=min(test$death_in_monthTRUE):max(test$death_in_monthTRUE)))
-
+table(predictions, y_test)
 ```
+
+
