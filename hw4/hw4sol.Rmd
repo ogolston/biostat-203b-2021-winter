@@ -295,7 +295,7 @@ colnames(final_data)
 
 
 ### Solution 
-First, the data was partitioned into a training set (80% of data) and a testing set (20% of data). The partitioning was stratified based on outcome so that the probability of death in the training set would not randomly be higher or lower than the testing set, which could lead to poorer predictive accuracy.  
+First, the numeric values in the data were normalized. Then the data was partitioned into a training set (80% of data) and a testing set (20% of data). The partitioning was stratified based on outcome so that the probability of death in the training set would not randomly be higher or lower than the testing set, which could lead to poorer predictive accuracy.  
 ```{r}
 #rescale the continuous variables 
 continuous_vars <- colnames(final_data)[12:27]
@@ -353,12 +353,11 @@ y_test <- test$death
 
 ```
 
-### Approach 0
+### Approach 0: Logistic Regression
 ```{r}
 logit_model <- glm(death ~ ., data = train, family = "binomial")
 summary(logit_model)
 ```
-
 
 Now, can make predictions for the testing set. The prediction will be a probability of death. For simplicity, values above .5 will be interpreted as a prediction of death. All other values will  be interpreted as a prediction of survival.
 
@@ -371,16 +370,16 @@ logit_preds[logit_preds != 1] = 0
 ```
 
 
-Display confusion matrix: 
+Display confusion matrix with columns for the true death status and rows for the predicted death status: 
 ```{r}
 table(logit_preds, y_test)
 ```
-For this scenario, relevant metrics of model fit include:
-**Accuracy**, the percentage of data points correctly classified. For this model, that is (78 + 8935)/10010 = 90%.    
+For this scenario, relevant metrics of model fit include:  
+**Accuracy**, the percentage of data points correctly classified. For this model, that is (78 + 8935)/10010 = 90%.      
 
-**Precision**, the percentage of predicted deaths that correspond to true deaths. In this model, that is 78 / (77 + 78) = 50%.    
+**Precision**, the percentage of predicted deaths that correspond to true deaths. In this model, that is 78 / (77 + 78) = 50%.      
 
-**Recall**, the percentage of true deaths that are correctly predicted as a death. In this model, that is 78 / (78 + 920) = 8%.  
+**Recall**, the percentage of true deaths that are correctly predicted as a death. In this model, that is 78 / (78 + 920) = 8%.    
 
 For imbalanced data such as this dataset (far more survivals than deaths), accuracy is not a very useful metric. Instead, we want to maximize precision and recall, which are fairly poor in this initial logistic model. 
 
@@ -414,12 +413,12 @@ lassopredict <- predict(cvfit, newx = as.matrix(x_test), type = "class", s = "la
 
 table(lassopredict, y_test)
 ```
-Compute fit metrics:
-**Accuracy**: 90%
-**Precision**: 56%
-**Recall**: 5%
+Compute fit metrics:  
+**Accuracy**: 90%  
+**Precision**: 56%  
+**Recall**: 5%  
 
-This model is more conservative about making death predictions, but is more precise when it does so. 
+This model is a bit more conservative about making death predictions, but is more precise when it does predict death. 
 
 ### Approach 2: Neural Net
 Due to errors when other packages are loaded while using neural networks, I unload a few packages.
@@ -430,8 +429,9 @@ detach("package:miceRanger", unload = TRUE)
 
 One issue with this dataset is that there is a fairly large degree of imbalance between the classes. This biases algorithms towards predicting the more common class (survival) in order to maximize predictive accuracy. One way to address this issue is underweighting the more common class in the training data. To do this, I kept only half of the surviving observations from the training set, but kept all of the death observations.
 ```{r}
+set.seed(1234)
 nn_survive_train <- survive_train %>%
-  sample_frac(.5)
+  sample_frac(.2)
 
 nntrain <- rbind(nn_survive_train, dead_train) 
 rows <- sample(nrow(nntrain))
@@ -442,26 +442,21 @@ nn_x_train <- nntrain %>%
 
 nn_y_train <- nntrain$death
 
-dim(x_train)
-```
-
-
-```{r}
 sum(nn_y_train)/length(nn_y_train)
-sum(y_train)/length(y_train)
 ```
-The training set has twice as many deaths, proportionally, as the original dataset. 
 
-Now, create the neural network architecture.
+
+
+Now, create the neural network architecture. Dropout layers are included to help prevent overfitting. 
 ```{r}
 library(keras)
 
 model <- keras_model_sequential() 
 model %>% 
-  layer_dense(units = 256, activation = 'relu', input_shape = c(27)) %>% 
+  layer_dense(units = 128, activation = 'relu', input_shape = c(27)) %>% 
   layer_dropout(rate = 0.3) %>% 
   layer_dense(units = 64, activation = 'relu') %>%
-  layer_dropout(rate = 0.3) %>% 
+  layer_dropout(rate = 0.2) %>% 
   layer_dense(units = 64, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>% 
   layer_dense(units = 1, activation = 'sigmoid')
@@ -469,7 +464,7 @@ summary(model)
 
 ```
 
-
+Compile the model using appropriate loss and optimization functions for binary outcomes.
 ```{r}
 model %>% compile(
   loss = 'binary_crossentropy',
@@ -479,40 +474,42 @@ model %>% compile(
 ```
 
 
-
+Run the model for 25 epochs, with batch size of 64, and reserving 20% of the data for validation.
 ```{r}
+set.seed(1234)
 history <- model %>% fit(
   as.matrix(nn_x_train), nn_y_train, 
-  epochs = 20, batch_size = 32, 
-  validation_split = 0.3
+  epochs = 20, batch_size = 64, 
+  validation_split = 0.2
 )
 ```
 
-
+This plot helps visualize whether overfitting has occurred - this would be the case if training accuracy keeps improving after validation accuracy has plateaued. These plots look decent, though there is probably some overfitting at the end. This could be improved by adding a callback that stops the model early when validation loss stops improving. 
 ```{r}
 plot(history)
 ```
 
 
+This code makes predictions for the test data and stores the results. Then, the confusion matrix is displayed. 
 ```{r}
 model %>% 
   evaluate(as.matrix(x_test), y_test)
-```
 
-```{r}
 predictions <- model %>% 
   predict(as.matrix(x_test)) > 0.5 
 
 predictions <- as.numeric(predictions)
-```
 
-
-```{r}
 table(predictions, y_test)
 ```
 
-**Accuracy**:
-**Precision**:
-**Recall**: 
+**Accuracy**: 81%  
+**Precision**: 28%  
+**Recall**: 57%  
 
-It looks like recall is better for this meethod, but precision and accuracy are a bit reduced. 
+Recall is really good for this method, but precision and accuracy are reduced. 
+
+The final choice of model really depends on what we are using it for, and what types of errors are the most serious. If we are using this to identify high-risk patients to monitor more closely, it would likely be best to use a model with higher recall - otherwise, you'd be missing the vast majority of at-risk patients. This particular model is able to identify over half of people who are going to die. Given that there are likely a lot of factors associated with patient deaths that aren't reflected in the dataset, this is pretty good. The downside of this model is that only ~28% of those identified as at-risk ended up dying, which isn't very precise. This might be unacceptably low, if it would lead to wasted resources.  
+
+By changing the balance of deaths and non-deaths in the training data, the balance between precision and recall can be shifted to the desired level. If the training data is not altered at all (no downweighting of non-deaths), both precision and recall were being better than the lasso and logistic models, so I think a neural network approach to this problem is best. 
+
