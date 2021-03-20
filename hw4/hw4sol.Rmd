@@ -43,9 +43,9 @@ MCAR stands for Missing Completely at Random. This occurs when there is no syste
 
 MAR stands for Missing at Random. This is when the missing data is more likely for certain (observable) subgroups of the study population, but is random within those groups. For example, it is possible that certain hospital care units are less meticulous about records keeping, so missing values - though completely random within the department - will be more common for patients in that particular unit.
 
-MNAR stands for Missing Not at Random. This occurs when the missing values are present due to a non-random mechanism. There are multiple ways this could happen in the MIMIC-IV data, such as:
-* Certain labs are only ordered for patients with particular conditions, so healthier patients may tend to have more missing values.
-* Unconscious or otherwise incapacitated patients may not be able to provide answers to demographic questions, such as marital status.
+MNAR stands for Missing Not at Random. This occurs when the missing values are present due to a non-random mechanism. There are multiple ways this could happen in the MIMIC-IV data, such as:  
+*  Certain labs are only ordered for patients with particular conditions, so healthier patients may tend to have more missing values.
+*  Unconscious or otherwise incapacitated patients may not be able to provide answers to demographic questions, such as marital status.
 
 Understanding which of these 3 classifications applies is necessary when determining how to address the missing data. 
 
@@ -67,7 +67,7 @@ For the MIMIC-IV data, the process will work as follows:
 4. The process (steps 2-3) is repeated until the imputed values have converged. 
 
 
-Source:[MICE Algorithm Vignette](https://cran.r-project.org/web/packages/miceRanger/vignettes/miceAlgorithm.html)
+Source: [MICE Algorithm Vignette](https://cran.r-project.org/web/packages/miceRanger/vignettes/miceAlgorithm.html)
 
 ### Question 1.3 
 Perform a data quality check of the ICU stays data. Discard variables with substantial missingness, say >5000 `NA`s. Replace apparent data entry errors by `NA`s.
@@ -107,13 +107,12 @@ icu_cohort <- icu_cohort %>%
   select(-all_of(vars_to_drop)) %>% 
   print()
 
-
-colnames(icu_cohort)
 ```
 
 Now there are only the demographic characteristics of interest, lab measurements, chart measurements, and the outcome variable in the data. 
 
-There also appear to be a good deal of data entry errors. Using my Shiny app, I looked for any extreme outliers or otherwise unusual values. 
+
+In addition to the missing values, there also appear to be some data entry errors. Using my Shiny app, I looked for any extreme outliers or otherwise unusual values. 
 
 One challenge in this process is that I don't have the medical knowledge to judge whether the extreme values are legitimate readings or not. If the extreme outliers are accurate, it's probably better to keep them, since they could be a sign of very poor health and might help predict death. On the other hand, if they are illegitimate, they could skew the results. 
 
@@ -134,13 +133,13 @@ I'm skeptical about the numbers in the 200's, but I think 941 is the only unambi
 **Mean Blood Pressure**
 ```{r}
 icu_cohort %>%
-  filter(non_invasive_blood_pressure_mean > 300 | non_invasive_blood_pressure_mean < 25) %>%
+  filter(non_invasive_blood_pressure_mean > 300) %>%
   select(non_invasive_blood_pressure_mean) %>%
   arrange(desc(non_invasive_blood_pressure_mean)) %>%
   print()
 
 ```
-The values above 900 are unrealistically high, so should be discarded. There are also suspicious values below 30, but I'm not sure if those are truly data entry errors, or if they indicate a significant medical event such as severe blood loss or a heart event, so I don't discard those.
+The values above 900 are unrealistically high, so should be discarded. I also noticed in Shiny that there are some values below 30, but I'm not sure if those are truly data entry errors, or if they indicate a significant medical event such as severe blood loss or a heart event, so I don't discard those.
 
 **Systolic Blood Pressure**
 ```{r}
@@ -152,21 +151,11 @@ icu_cohort %>%
 ```
 These values are unrealistically high. For reasons listed above, aberrantly low values were not discarded.
 
-**Ethnicity**
-```{r}
-icu_cohort %>%
-  group_by(ethnicity) %>%
-  count() %>%
-  print()
-```
-For ethnicity, there are "NA" values in hiding - "Unknown" and "Unable to obtain." These values shouldn't be predictivive, but multiple imputation also seems a bit questionable. I decided to leave these values as is. 
-
-
 **Temperature**
 ```{r}
 icu_cohort %>%
   filter(temperature_fahrenheit < 90) %>%
-  select(heart_rate, temperature_fahrenheit, respiratory_rate) %>%
+  select(temperature_fahrenheit) %>%
   print()
 ```
 There is a small cluster of temperatures around 37, which likely corresponds to Celcius values rather than Fahrenheit. Though I could probably deduce what the true measurement was, I set all of these to `NA`, along with any other illogically low values (<80). Values in the 80s might also be mistakes, but it's hard to be sure, since they could be cases of hypothermia. 
@@ -195,7 +184,7 @@ cleaned_cohort <- icu_cohort %>%
 ### Question 1.4
 Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
 
-**Solution**
+**Solution**  
 The `max.depth = 10` option is used to reduce the time required for imputation.
 ```{r eval = F}
 miceObj <- miceRanger(
@@ -203,73 +192,84 @@ miceObj <- miceRanger(
     m = 3,
     max.depth = 10,
     returnModels = TRUE,
-    verbose=FALSE
+    verbose = FALSE
 )
 
 saveRDS(miceObj, "hw4_results.rds")
 ```
 
+Can now remove some files that are no longer needed, to save memory
+```{r}
+rm(cleaned_cohort)
+rm(icu_cohort)
+```
 
 ### Question 1.5
 Make imputation diagnostic plots and explain what they mean.
 
 **Solution**
+NOTE: The imputation results file is large, so I am not putting it on GitHub. Thus, the diagnostic plots will not be reproducible. 
+
 First, read in the imputation results:
-```{r}
+```{r eval = F}
 miceObj = readRDS("hw4_results.rds")
 ```
 
 
 Then make the plots, as described in [the documentation](https://cran.r-project.org/web/packages/miceRanger/vignettes/miceAlgorithm.html). 
 Note: since there are so many variables, the plots do not always display in the most readable format.
-```{r}
+```{r eval = F}
 plotDistributions(miceObj)
 ```
 
-The above plots compare the original distribution of each variable (in red) to the distribution of the imputed values (black). In most cases, the original and imputed values match fairly closely, which indicates that the data may have been MCAR or MAR. The biggest differences seem to be for heart rate and respiratory rate, which look a bit more jagged in their distribution. However, there were very few missing values for these two variables in the original data, so it makes sense that the distribution doesn't look smooth. 
+The above plots compare the original distribution of each variable (in red) to the distribution of the imputed values (black). In most cases, the original and imputed values match closely, which indicates that the data may have been MCAR or MAR. The biggest differences seem to be for heart rate and respiratory rate, which look a bit more jagged in their distribution. However, there were very few missing values for these two variables in the original data, so it makes sense that the imputation distribution doesn't look smooth. 
 
-
-```{r}
+  
+```{r eval = F}
 plotCorrelations(miceObj)
 ```
-The above plots show how correlated the imputed values between the 3 imputed datasets are, after each iteration. Correlation seems to decrease with more iterations in most cases, the various imputed datasets may not be very concordant. It seems to me that the final values might be fairly random in many cases (so probably not very accurate). However, based on the previous plot, the imputed values at least do match realistic values within the population, so I don't think this will have a big impact on the final results.
+  
+The above plots show how correlated the imputed values between the 3 imputed datasets are, after each iteration. Correlation seems to decrease with more iterations in most cases, which indicates that the final values in the 3 imputed datasets may not be very concordant. There may not have been many strong correlations to base the guesses on, meaning that the final imputations are fairly random. However, based on the previous plot, the imputed values at least do match realistic values within the population, so I don't think this will have a negative impact on the final results.
 
 
-```{r}
+```{r eval = F}
 plotVarConvergence(miceObj)
 ```
 
-The above plot shows how the mean values and standard deviation vary across the iterations. It looks like the mean converges quickly for all of the datasets. SD looks fairly random across the variables and doesn't seem to be trending significantly up or down. Overall, I think these plots look ok.  
+The above plot shows how the mean values and standard deviations vary across the iterations. It looks like the variable means converge fairly well across the datasets. SD looks fairly random across the variables and doesn't seem to be trending significantly up or down. It looks like overall convergence is probably ok.    
 
 
-```{r}
+```{r eval = F}
 plotModelError(miceObj)
 ```
-The above plots show how the out-of-bag R^2 metric changes with more iterations, in each of the 3 imputed datasets. This is a way of assessing model error/accuracy. For most variables, the value improves with more iterations, though in some cases it does go down. Overall, I don't think these results indicate great accuracy for the imputation, since many of the R^2 values are quite low (<.25). However, that isn't overly surprising, since there's a lot of random variation in these measurements and they aren't going to correlate perfectly with each other. 
+   
+The above plots show how the out-of-bag R^2 metric changes with more iterations, in each of the 3 imputed datasets. This is a way of assessing model error/accuracy. For most variables, the value improves with more iterations, though in some cases it does go down. Overall, I don't think these results indicate great accuracy for the imputation, since many of the R^2 values are quite low (<.25). However, that isn't overly surprising to me. There are a lot of unmeasured factors that influence vital measurements and demographics, so I wouldn't expect the imputation to be too accurate. 
 
 
-```{r}
+```{r eval = F}
 plotVarImportance(miceObj)
 ```
-The above plot shows the most important variables (ie, most correlated) for imputing missing values of a particular variable. For example, `mean_bp` is extremely important when imputing `systolic_bp`, and vice versa, which makes logical sense since they should be very correlated. 
+    
+The above plot shows the most important variables (listed along the top) for imputing missing values of a particular variable (listed on the left hand side). For example, `mean_bp` is extremely important when imputing `systolic_bp`, and vice versa, which makes logical sense since they should be very correlated. 
 
 
-```{r}
+```{r eval = F}
 plotImputationVariance(miceObj)
 ```
-The above plots compare the standard deviation in imputed values between datasets, and are shaded to show how often this is less than the overall population variance (indicated by dotted line). Since the shaded regions tend to be pretty large (> 50% of distribution), it does seem like these imputations are more precise than what would be expected by filling in values randomly. 
+  
+The above diagnostic plots compare the standard deviation of imputed values between datasets, and are shaded to show how often this is less than the overall population variance (indicated by dotted line). Since the shaded regions tend to be pretty large (> 50% of distribution), it does seem like these imputations are more precise than what would be expected by filling in values randomly. 
 
 The bar chart shows that the rate of concordance for `marital_status` between the 3 imputed datasets is not much better than what would be expected by random chance. 
 
 
-Taken together, my interpreation of the various plots is that the 3 imputations are somewhat random, but still a bit better than what would be expected by random chance. 
+Taken together, my interpreation of the various plots is that the 3 imputations are fairly random, but still give slightly better guesses at the missing values than what would be expected by random chance. 
 
 ### Question 1.6
 Obtain a complete data set by averaging the 3 imputed data sets.
 
 **Solution**
 First, save the 3 imputed datasets as a list, and then save each as an individual matrix. 
-```{r}
+```{r eval = F}
 dataList <- completeData(miceObj)
 
 data1 <- model.matrix(~., dataList[[1]])
@@ -279,12 +279,17 @@ data3 <- model.matrix(~., dataList[[3]])
 
 
 Take the average of the 3 imputed dataset matrices: 
-```{r}
+```{r eval = F}
 final_data_matrix <- (data1 + data2 + data3)/3
 
 rm(data1)
 rm(data2)
 rm(data3)
+```
+
+This was saved for easy access to the final data and can be read in with the following code: 
+```{r}
+final_data_matrix <- readRDS("final_data.rds")
 ```
 
 ## Q2. Predicting 30-day mortality
@@ -342,19 +347,22 @@ survive_test <- survived %>%
   anti_join(survive_train, by = "id")
 
 #recombine the deaths and non-deaths together for the final datasets
-#shuffle the rows so that the order is not predictive
 test <- rbind(survive_test, dead_test) %>%
   select(-id)
 
+train <- rbind(survive_train, dead_train)  %>%
+  select(-id)
+
+#shuffle the rows so that the order is not predictive
 rows <- sample(nrow(test))
 test <- test[rows, ]
 
-train <- rbind(survive_train, dead_train)  %>%
-  select(-id)
 rows <- sample(nrow(train))
 train <- train[rows, ]
+```
 
-#create separate data structures for the predictors and the outcome
+The obtained training and testing datasets can be separated into separate data structures for the predictors and outcome.
+```{r}
 x_train <- train %>% 
   select(-death) 
 
@@ -364,7 +372,6 @@ x_test <- test %>%
   select(-death) 
 
 y_test <- test$death
-
 ```
 
 ### Approach 0: Logistic Regression
@@ -374,6 +381,7 @@ Logistic regression is a basic approach that can be used for binary outcomes. We
 logit_model <- glm(death ~ ., data = train, family = "binomial")
 summary(logit_model)
 ```
+Based on the summary output, some predictors are highly significant, such as age at admission, white blood cell count, and heart rate. However, many other predictors are not significant, such as gender and marital status.
 
 This model can be used to make predictions for the probability of death. For simplicity, values above .5 will be interpreted as a prediction of death, while lower values will be interpreted as a prediction of survival.
 
@@ -398,7 +406,7 @@ For this scenario, relevant metrics of model fit include:
 
 **Recall**, the percentage of true deaths that are correctly predicted as a death. In this model, that is 78 / (78 + 920) = 8%.    
 
-For imbalanced data such as this dataset (far more survivals than deaths), accuracy is not a very useful metric. Instead, we want to maximize precision and recall. Precision is decent (given the difficulty of this problem), but recall is quite poor in this initial model.
+For imbalanced data such as this (far more survivals than deaths), accuracy is not a very useful metric. Instead, we want to maximize precision and recall. Precision is decent (given the difficulty of this problem), but recall is quite poor in this initial model.
 
 ### Approach 1: Lasso Logistic Regression
 A pure logistic regession produces a maximum likelihood estimate for the regression coefficients. However, while this is the best fit for the training data, it may not generalize well to data outside of the original training set, especially if there are a lot of outliers/influential values. In the results above, there are many statistically significant predictors, but also many predictors that are not significant. Lasso regression "shrinks" unimportant coefficients towards 0, such that non-significant predictors might be dropped from the model entirely. This helps prevent overfitting of the model and thus may give more generalizable results.
@@ -406,7 +414,7 @@ A pure logistic regession produces a maximum likelihood estimate for the regress
 
 The following code is adapted from [Glmnet Vignette](https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html).
 
-Run lasso logistic regression and plot the coefficient values as a function of the tuning parameter, lambda. Depending on the tuning, certain parameters shrink to 0. 
+Run lasso logistic regression and plot the coefficient values as a function of the tuning parameter, lambda. Depending on the tuning, certain parameters shrink to 0. Since I've already standardized the variables, this option is set to false. 
 ```{r}
 fit = glmnet(as.matrix(x_train), y_train, 
              standardize = FALSE, family = "binomial")
@@ -416,7 +424,7 @@ plot(fit)
 ```
 
 
-We need to choose the value of the tuning parameter. This can be done using cross validation, to find the ideal value. For a slightly more conservative fit, the `lambda.1se` value will be used. 
+We need to choose the value of the tuning parameter. This can be done using cross validation to find the ideal value. For a slightly more conservative fit, the `lambda.1se` value will be used. This corresponds to the second dotted line, which is where error is 1 standard error away from the minimum error value.
 ```{r}
 set.seed(1234)
 cvfit = cv.glmnet(as.matrix(x_train), y_train, family = "binomial")
@@ -429,7 +437,8 @@ Some variables have a regression coefficient of 0, such as most of the race vari
 
 Predict values for the  testing set using the results, and display the confusion matrix.
 ```{r}
-lassopredict <- predict(cvfit, newx = as.matrix(x_test), type = "class", s = "lambda.1se")
+lassopredict <- predict(cvfit, newx = as.matrix(x_test), 
+                        type = "class", s = "lambda.1se")
 
 table(lassopredict, y_test)
 ```
@@ -451,26 +460,31 @@ One issue with this dataset is that there is a fairly large degree of imbalance 
 
 The following code sets up the training data:
 ```{r}
+#keep only 20% of the non-death observations in the training set
 set.seed(1234)
 nn_survive_train <- survive_train %>%
   sample_frac(.2)
 
+#put together deaths (defined before) and underweighted non-deaths
+#then, shuffle the rows
 nntrain <- rbind(nn_survive_train, dead_train) 
 rows <- sample(nrow(nntrain))
 nntrain <- nntrain[rows, ]
 
+#separate the data into predictor and outcome 
 nn_x_train <- nntrain %>% 
   select(-c(death, id)) 
 
 nn_y_train <- nntrain$death
 
 #calculate the proportion of deaths in the final training set
-sum(nn_y_train)/length(nn_y_train)
+sum(nn_y_train) / length(nn_y_train)
 ```
 About 36% of the training data represents deaths, while the remaining 64% is survivors. This does discard a lot of information, but also makes it easier for the neural network to pick up on the patterns associated with death. 
 
 
 Now, create the neural network architecture. I used the [Tensorflow for R Guide](https://tensorflow.rstudio.com/guide/keras/) to get started building the model.
+
 ```{r}
 library(keras)
 
@@ -499,7 +513,6 @@ model %>% compile(
 
 Run the model for 20 epochs, with batch size of 64, and reserving 20% of the data for validation.
 ```{r}
-set.seed(1234)
 history <- model %>% fit(
   as.matrix(nn_x_train), nn_y_train, 
   epochs = 20, batch_size = 64, 
@@ -525,14 +538,15 @@ predictions <- as.numeric(predictions)
 
 table(predictions, y_test)
 ```
-Metrics:
-**Accuracy**: 81%  
-**Precision**: 28%  
-**Recall**: 57%  
 
-Recall is really good for this method, but precision and accuracy are reduced. 
+Metrics for my most recent model run (exact values will vary from run to run, but the trends should be consistent):  
+**Accuracy**: 80%  
+**Precision**: 28%  
+**Recall**: 62%  
+
+Recall is really good for this method, but precision and accuracy are reduced compared to logistic/lasso regression. 
 
 The final choice of model really depends on what we are using it for, and what types of errors are the most serious. If we are using this to identify high-risk patients to monitor more closely, it would likely be best to use a model with higher recall - otherwise, you'd be missing the vast majority of at-risk patients. This particular model is able to identify over half of people who are going to die. Given that there are likely a lot of factors associated with patient deaths that aren't reflected in the dataset, this is pretty good. The downside of this model is that only ~28% of those identified as at-risk ended up dying, which isn't very precise. This might be unacceptably low, if it would lead to wasted resources.  
 
-By changing the balance of deaths and non-deaths in the training data, the balance between precision and recall can be shifted to the desired level. If the training data is not altered at all (no downweighting of non-deaths), both precision and recall were being better than the lasso and logistic models, so I think a neural network approach to this problem is best. 
+By changing the balance of deaths and non-deaths in the training data, the balance between precision and recall can be shifted to the desired level. If the training data is not altered at all (no downweighting of non-deaths), both precision and recall were a bit better than the lasso and logistic models, so I think a neural network approach to this problem is best. 
 
