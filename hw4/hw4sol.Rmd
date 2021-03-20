@@ -220,35 +220,49 @@ miceObj = readRDS("hw4_results.rds")
 ```
 
 
+Then make the plots, as described in [the documentation](https://cran.r-project.org/web/packages/miceRanger/vignettes/miceAlgorithm.html). 
+Note: since there are so many variables, the plots do not always display in the most readable format.
 ```{r}
 plotDistributions(miceObj)
 ```
 
-The above plots compare the original distribution of each variable (in red) to the distribution of the imputed values (black). In most cases, the original and imputed values match fairly closely, which indicates that the data may have been MCAR or MAR. The biggest differences seem to be for heart rate and respiratory rate, which look a bit more jagged in their distribution. However, there were very few missing values for these two variables in the original data (8 and 34, respectively), so it makes sense that the distribution doesn't look smooth. 
+The above plots compare the original distribution of each variable (in red) to the distribution of the imputed values (black). In most cases, the original and imputed values match fairly closely, which indicates that the data may have been MCAR or MAR. The biggest differences seem to be for heart rate and respiratory rate, which look a bit more jagged in their distribution. However, there were very few missing values for these two variables in the original data, so it makes sense that the distribution doesn't look smooth. 
 
 
 ```{r}
 plotCorrelations(miceObj)
 ```
-The above plots show how correlated the imputed values between the 3 imputed datasets are, after each iteration. Correlation seems to decrease with more iterations in most cases, so convergence doesn't appear to be good for this data. It appears that the different datasets are coming up with fairly different final guesses.
+The above plots show how correlated the imputed values between the 3 imputed datasets are, after each iteration. Correlation seems to decrease with more iterations in most cases, the various imputed datasets may not be very concordant. It seems to me that the final values might be fairly random in many cases (so probably not very accurate). However, based on the previous plot, the imputed values at least do match realistic values within the population, so I don't think this will have a big impact on the final results.
 
 
 ```{r}
 plotVarConvergence(miceObj)
 ```
 
-
+The above plot shows how the mean values and standard deviation vary across the iterations. It looks like the mean converges quickly for all of the datasets. SD looks fairly random across the variables and doesn't seem to be trending significantly up or down. Overall, I think these plots look ok.  
 
 
 ```{r}
 plotModelError(miceObj)
 ```
-The above plots show how the out-of-bag R^2 metric changes with more iterations, in each of the 3 imputed datasets. This is a way of assessing model error/accuracy. For most variables, the R^2 value improves with more iterations, though the results are not great. Variables with high R^2 values like systolic and mean blood pressure might perform better because there is a highly correlated other variable in the data. 
+The above plots show how the out-of-bag R^2 metric changes with more iterations, in each of the 3 imputed datasets. This is a way of assessing model error/accuracy. For most variables, the value improves with more iterations, though in some cases it does go down. Overall, I don't think these results indicate great accuracy for the imputation, since many of the R^2 values are quite low (<.25). However, that isn't overly surprising, since there's a lot of random variation in these measurements and they aren't going to correlate perfectly with each other. 
+
 
 ```{r}
-plotImputationVariance(miceObj, ncol=2, widths=c(5,3))
+plotVarImportance(miceObj)
 ```
+The above plot shows the most important variables (ie, most correlated) for imputing missing values of a particular variable. For example, `mean_bp` is extremely important when imputing `systolic_bp`, and vice versa, which makes logical sense since they should be very correlated. 
 
+
+```{r}
+plotImputationVariance(miceObj)
+```
+The above plots compare the standard deviation in imputed values between datasets, and are shaded to show how often this is less than the overall population variance (indicated by dotted line). Since the shaded regions tend to be pretty large (> 50% of distribution), it does seem like these imputations are more precise than what would be expected by filling in values randomly. 
+
+The bar chart shows that the rate of concordance for `marital_status` between the 3 imputed datasets is not much better than what would be expected by random chance. 
+
+
+Taken together, my interpreation of the various plots is that the 3 imputations are somewhat random, but still a bit better than what would be expected by random chance. 
 
 ### Question 1.6
 Obtain a complete data set by averaging the 3 imputed data sets.
@@ -283,8 +297,8 @@ Develop at least two analytic approaches for predicting the 30-day mortality of 
 
 3. Compare model prediction performance on the test set.
 
-
-Convert back to a data frame and display possible features.
+### Solution 
+First, convert back to a data frame and display possible features.
 ```{r}
 final_data <- as.data.frame(final_data_matrix) %>%
   select(-c("(Intercept)")) %>%
@@ -293,17 +307,16 @@ final_data <- as.data.frame(final_data_matrix) %>%
 colnames(final_data)
 ```
 
-
-### Solution 
-First, the numeric values in the data were normalized. Then the data was partitioned into a training set (80% of data) and a testing set (20% of data). The partitioning was stratified based on outcome so that the probability of death in the training set would not randomly be higher or lower than the testing set, which could lead to poorer predictive accuracy.  
+The following code sets up the training and testing sets which will be used for the analysis. We set aside the testing data so we can get an unbiased estimate of predictive accuracy for our final model. 
 ```{r}
-#rescale the continuous variables 
+#rescale the continuous variables so they are normalized
 continuous_vars <- colnames(final_data)[12:27]
+
 final_data <- final_data %>%
   mutate_at(continuous_vars, scale)
 
 #separate the deaths and non-deaths into separate datasets
-#temporary id is added for partitioning the observations
+#temporary id is added to aid in partitioning the observations
 dead <- final_data %>%
   filter(death == 1) %>%
   mutate(id = row_number())
@@ -314,7 +327,7 @@ survived <- final_data %>%
 
 
 #randomly split each outcome 80/20 into the training and testing datasets
-#seed set so results are reproducible
+#seed is set so that results are reproducible
 set.seed(1234)
 dead_train <- dead %>%
   sample_frac(.8) 
@@ -328,7 +341,8 @@ survive_train <- survived %>%
 survive_test <- survived %>%
   anti_join(survive_train, by = "id")
 
-#put deaths and non-deaths together into the final datasets and shuffle the rows 
+#recombine the deaths and non-deaths together for the final datasets
+#shuffle the rows so that the order is not predictive
 test <- rbind(survive_test, dead_test) %>%
   select(-id)
 
@@ -340,7 +354,7 @@ train <- rbind(survive_train, dead_train)  %>%
 rows <- sample(nrow(train))
 train <- train[rows, ]
 
-#split into separate data structure for the "predictors" and "outcome"
+#create separate data structures for the predictors and the outcome
 x_train <- train %>% 
   select(-death) 
 
@@ -354,12 +368,14 @@ y_test <- test$death
 ```
 
 ### Approach 0: Logistic Regression
+
+Logistic regression is a basic approach that can be used for binary outcomes. We can fit the model and obtain coefficient estimates: 
 ```{r}
 logit_model <- glm(death ~ ., data = train, family = "binomial")
 summary(logit_model)
 ```
 
-Now, can make predictions for the testing set. The prediction will be a probability of death. For simplicity, values above .5 will be interpreted as a prediction of death. All other values will  be interpreted as a prediction of survival.
+This model can be used to make predictions for the probability of death. For simplicity, values above .5 will be interpreted as a prediction of death, while lower values will be interpreted as a prediction of survival.
 
 ```{r}
 logit_preds = predict(logit_model, x_test, type = "response")
@@ -374,6 +390,7 @@ Display confusion matrix with columns for the true death status and rows for the
 ```{r}
 table(logit_preds, y_test)
 ```
+
 For this scenario, relevant metrics of model fit include:  
 **Accuracy**, the percentage of data points correctly classified. For this model, that is (78 + 8935)/10010 = 90%.      
 
@@ -381,15 +398,18 @@ For this scenario, relevant metrics of model fit include:
 
 **Recall**, the percentage of true deaths that are correctly predicted as a death. In this model, that is 78 / (78 + 920) = 8%.    
 
-For imbalanced data such as this dataset (far more survivals than deaths), accuracy is not a very useful metric. Instead, we want to maximize precision and recall, which are fairly poor in this initial logistic model. 
+For imbalanced data such as this dataset (far more survivals than deaths), accuracy is not a very useful metric. Instead, we want to maximize precision and recall. Precision is decent (given the difficulty of this problem), but recall is quite poor in this initial model.
 
 ### Approach 1: Lasso Logistic Regression
-A pure logistic regession produces a maximum likelihood estimate for the regression coefficients. However, while this is the best fit for the training data, it may not generalize well to data outside of the original training set, especially if there are a lot of outliers/influential values. In the results above, there are many statistically significant predictors, but also many predictors that are not significant. Lasso regression helps avoid this issue by shrinking unimportant coefficients towards 0, such that non-significant predictors might be dropped from the model entirely. This helps prevent overfitting of the model to the data. 
+A pure logistic regession produces a maximum likelihood estimate for the regression coefficients. However, while this is the best fit for the training data, it may not generalize well to data outside of the original training set, especially if there are a lot of outliers/influential values. In the results above, there are many statistically significant predictors, but also many predictors that are not significant. Lasso regression "shrinks" unimportant coefficients towards 0, such that non-significant predictors might be dropped from the model entirely. This helps prevent overfitting of the model and thus may give more generalizable results.
 
-Run lasso logistic regression and plot the coefficient values as a function of the lambda tuning parameter. Depending on the tuning, certain parameters shrink to 0. 
+
+The following code is adapted from [Glmnet Vignette](https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html).
+
+Run lasso logistic regression and plot the coefficient values as a function of the tuning parameter, lambda. Depending on the tuning, certain parameters shrink to 0. 
 ```{r}
 fit = glmnet(as.matrix(x_train), y_train, 
-             standardize = FALSE,family = "binomial")
+             standardize = FALSE, family = "binomial")
 
 plot(fit)
 
@@ -407,7 +427,7 @@ coef(cvfit, s = "lambda.1se")
 Some variables have a regression coefficient of 0, such as most of the race variables, marital status, gender, magnesium and others.
 
 
-Preidct values for the  testing set using the results, and display the confusion matrix.
+Predict values for the  testing set using the results, and display the confusion matrix.
 ```{r}
 lassopredict <- predict(cvfit, newx = as.matrix(x_test), type = "class", s = "lambda.1se")
 
@@ -421,13 +441,15 @@ Compute fit metrics:
 This model is a bit more conservative about making death predictions, but is more precise when it does predict death. 
 
 ### Approach 2: Neural Net
-Due to errors when other packages are loaded while using neural networks, I unload a few packages.
+Due to errors when both `keras` and `miceRanger` are loaded, I unload `miceRanger` here.
 ```{r}
 detach("package:miceRanger", unload = TRUE)
 ```
 
 
-One issue with this dataset is that there is a fairly large degree of imbalance between the classes. This biases algorithms towards predicting the more common class (survival) in order to maximize predictive accuracy. One way to address this issue is underweighting the more common class in the training data. To do this, I kept only half of the surviving observations from the training set, but kept all of the death observations.
+One issue with this dataset is that there is a fairly large degree of imbalance between the classes. This biases algorithms towards predicting the more common class (survival) in order to maximize predictive accuracy. One way to address this issue is under-weighting the more common class in the training data. To do this, I kept only a portion of the surviving observations from the training set, but kept all of the death observations.
+
+The following code sets up the training data:
 ```{r}
 set.seed(1234)
 nn_survive_train <- survive_train %>%
@@ -442,12 +464,13 @@ nn_x_train <- nntrain %>%
 
 nn_y_train <- nntrain$death
 
+#calculate the proportion of deaths in the final training set
 sum(nn_y_train)/length(nn_y_train)
 ```
+About 36% of the training data represents deaths, while the remaining 64% is survivors. This does discard a lot of information, but also makes it easier for the neural network to pick up on the patterns associated with death. 
 
 
-
-Now, create the neural network architecture. Dropout layers are included to help prevent overfitting. 
+Now, create the neural network architecture. I used the [Tensorflow for R Guide](https://tensorflow.rstudio.com/guide/keras/) to get started building the model.
 ```{r}
 library(keras)
 
@@ -474,7 +497,7 @@ model %>% compile(
 ```
 
 
-Run the model for 25 epochs, with batch size of 64, and reserving 20% of the data for validation.
+Run the model for 20 epochs, with batch size of 64, and reserving 20% of the data for validation.
 ```{r}
 set.seed(1234)
 history <- model %>% fit(
@@ -484,7 +507,7 @@ history <- model %>% fit(
 )
 ```
 
-This plot helps visualize whether overfitting has occurred - this would be the case if training accuracy keeps improving after validation accuracy has plateaued. These plots look decent, though there is probably some overfitting at the end. This could be improved by adding a callback that stops the model early when validation loss stops improving. 
+This plot helps visualize whether overfitting has occurred - this would be the case if training accuracy keeps improving after validation accuracy has plateaued. These plots look decent, but could probably be improved by adding a callback that stops the model early when validation loss stops improving. 
 ```{r}
 plot(history)
 ```
@@ -502,7 +525,7 @@ predictions <- as.numeric(predictions)
 
 table(predictions, y_test)
 ```
-
+Metrics:
 **Accuracy**: 81%  
 **Precision**: 28%  
 **Recall**: 57%  
