@@ -38,6 +38,7 @@ system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 
 Much of the code in Question 6 through 8 was provided by Dr. Zhou. I adapted it slightly to fit my needs, but would like to acknowledge that his code provided a major basis for the final solution.
 
+
 ## Q1. PhysioNet credential
 
 At this moment, you should already get credentialed on the PhysioNet. Please include a screenshot of your `Data Use Agreement for the MIMIC-IV (v0.4)`.
@@ -710,7 +711,7 @@ chart_events <- chart_events %>%
 
 #### Reading in the filtered file
 
-As with the `labevents` data, Dr. Zhou did the steps outlined above but used `awk` to select only the necessary columns and rows of the `chartevents` data. This pre-filtered file, called `chartevents_filtered.csv.gz`, was read in and saved using the following code (which was provided by Dr. Zhou):
+As with the `labevents` data, Dr. Zhou did the steps outlined above but used `awk` to select only the necessary columns and rows of the `chartevents` data. This pre-filtered file, called `chartevents_filtered.csv.gz`, was read in and saved using the following code:
 ```{r eval = F}
 if(!file.exists("chartevents_filtered.csv.gz")) {
     chartevents_tble <- fread(str_c(derived_data_path, 
